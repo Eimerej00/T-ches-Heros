@@ -1,0 +1,228 @@
+{
+  "settings": {
+    "familyName": "La Tribu des Héros",
+    "familyCode": "TRIBU-42",
+    "guardianPin": "1805",
+    "requirePinForValidation": true
+  },
+  "members": [
+    {
+      "id": "m-1",
+      "name": "Maman",
+      "role": "tuteur",
+      "avatar": "👑",
+      "color": "#8b5cf6",
+      "points": 0,
+      "totalEarnedPoints": 0,
+      "level": 1,
+      "title": "Gardienne du Foyer",
+      "createdAt": "2026-01-01T10:00:00Z"
+    },
+    {
+      "id": "m-2",
+      "name": "Papa",
+      "role": "tuteur",
+      "avatar": "🛡️",
+      "color": "#06b6d4",
+      "points": 0,
+      "totalEarnedPoints": 0,
+      "level": 1,
+      "title": "Protecteur de la Maison",
+      "createdAt": "2026-01-01T10:00:00Z"
+    },
+    {
+      "id": "m-3",
+      "name": "Philéas",
+      "role": "joueur",
+      "avatar": "🚀",
+      "color": "#10b981",
+      "points": 0,
+      "totalEarnedPoints": 0,
+      "level": 1,
+      "title": "Novice en Mission 🌱",
+      "createdAt": "2026-01-02T10:00:00Z"
+    },
+    {
+      "id": "m-4",
+      "name": "Giliane",
+      "role": "joueur",
+      "avatar": "🌸",
+      "color": "#ec4899",
+      "points": 0,
+      "totalEarnedPoints": 0,
+      "level": 1,
+      "title": "Novice en Mission 🌱",
+      "createdAt": "2026-01-02T10:00:00Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "t-1",
+      "title": "Mettre la table",
+      "description": "Disposer assiettes, verres, couverts, serviettes et boissons sur la table",
+      "points": 10,
+      "category": "cuisine",
+      "targetType": "general",
+      "assignedTo": [],
+      "icon": "🍽️",
+      "frequency": "quotidien",
+      "createdBy": "m-1",
+      "createdAt": "2026-01-03T10:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "t-2",
+      "title": "Débarrasser et vider le lave-vaisselle",
+      "description": "Ranger la vaisselle propre dans les placards et tiroirs.",
+      "points": 15,
+      "category": "cuisine",
+      "targetType": "general",
+      "assignedTo": [],
+      "icon": "🫧",
+      "frequency": "quotidien",
+      "createdBy": "m-1",
+      "createdAt": "2026-01-03T10:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "t-3",
+      "title": "Ranger sa chambre à fond",
+      "description": "Faire son lit, ranger les jouets et dégager le sol : rien ne doit traîner !",
+      "points": 30,
+      "category": "chambre",
+      "targetType": "personnel",
+      "assignedTo": [
+        "m-3",
+        "m-4"
+      ],
+      "icon": "🛏️",
+      "frequency": "hebdo",
+      "createdBy": "m-2",
+      "createdAt": "2026-01-03T10:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "t-4",
+      "title": "Nourrir le chat",
+      "description": "Lui donner ses croquettes fraîches et de l’eau propre.",
+      "points": 10,
+      "category": "animaux",
+      "targetType": "general",
+      "assignedTo": [],
+      "icon": "🐱",
+      "frequency": "quotidien",
+      "createdBy": "m-1",
+      "createdAt": "2026-01-03T10:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "t-5",
+      "title": "Vider la poubelle ménagère et emballages",
+      "description": "Vider les poubelles de la cuisine, nettoyer et remettre un sac poubelle propre",
+      "points": 25,
+      "category": "menage",
+      "targetType": "general",
+      "assignedTo": [],
+      "icon": "🗑️",
+      "frequency": "hebdo",
+      "createdBy": "m-2",
+      "createdAt": "2026-01-03T10:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "t-6",
+      "title": "Faire ses devoirs sans râler",
+      "description": "Finir les leçons et préparer le cartable pour le lendemain.",
+      "points": 10,
+      "category": "ecole",
+      "targetType": "personnel",
+      "assignedTo": [
+        "m-3",
+        "m-4"
+      ],
+      "icon": "📚",
+      "frequency": "quotidien",
+      "createdBy": "m-1",
+      "createdAt": "2026-01-03T10:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "t-7",
+      "title": "Passer l’aspirateur dans la cuisine",
+      "description": "Objectif Zéro Miettes + Coin Cléo",
+      "points": 10,
+      "category": "menage",
+      "targetType": "general",
+      "assignedTo": [],
+      "icon": "🧹",
+      "frequency": "quotidien",
+      "createdBy": "m-2",
+      "createdAt": "2026-01-03T10:00:00Z",
+      "isActive": true
+    },
+    {
+      "id": "t-1791288704125",
+      "title": "Lessive",
+      "description": "Regrouper, trier, laver, sécher le linge sale",
+      "points": 25,
+      "category": "chambre",
+      "targetType": "general",
+      "assignedTo": [],
+      "icon": "👕",
+      "frequency": "hebdo",
+      "createdBy": "m-2",
+      "createdAt": "2026-10-06T12:11:44.125Z",
+      "isActive": true
+    }
+  ],
+  "submissions": [],
+  "rewards": [
+    {
+      "id": "rew-1",
+      "title": "30 minutes d’écran ou jeu vidéo bonus",
+      "description": "Si devoirs faits: Valable le week-end ou mercredi après-midi.",
+      "cost": 50,
+      "icon": "🎮",
+      "category": "divertissement",
+      "timesClaimed": 0
+    },
+    {
+      "id": "rew-2",
+      "title": "Choisir le menu du samedi soir",
+      "description": "Prévenir à l'avance : Crêpes Party, Pizza, Hot Dogs...",
+      "cost": 70,
+      "icon": "🍕",
+      "category": "nourriture",
+      "timesClaimed": 0
+    },
+    {
+      "id": "rew-3",
+      "title": "Veillée film en famille avec pop-corn",
+      "description": "Choix du film au coin du canapé.",
+      "cost": 100,
+      "icon": "🎬",
+      "category": "famille",
+      "timesClaimed": 0
+    },
+    {
+      "id": "rew-4",
+      "title": "Coucher décalé de 45 minutes",
+      "description": "Valable pour un lendemain où il n'y a pas cours",
+      "cost": 50,
+      "icon": "🌙",
+      "category": "privilege",
+      "timesClaimed": 0
+    },
+    {
+      "id": "rew-5",
+      "title": "Sortie ou activité de son choix",
+      "description": "Ciné, Escalade, Bowling... Avec budget raisonnable",
+      "cost": 200,
+      "icon": "🛹",
+      "category": "sortie",
+      "timesClaimed": 0
+    }
+  ],
+  "rewardClaims": [],
+  "lastUpdated": 1791288941576
+}
