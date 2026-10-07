@@ -26,7 +26,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ state, activeMember })
           <span className="text-xl">🏆</span>
         </h1>
         <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-          Chaque corvée accomplie vous fait progresser dans les rangs des Héros !
+          Chaque mission accomplie vous fait progresser dans les rangs des Héros !
         </p>
       </div>
 

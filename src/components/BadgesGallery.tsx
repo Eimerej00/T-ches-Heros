@@ -63,7 +63,7 @@ export const BadgesGallery: React.FC<BadgesGalleryProps> = ({ state, activeMembe
             </h2>
           </div>
           <p className="text-xs text-slate-500 mt-0.5 ml-10">
-            Débloquez des récompenses spéciales en franchissant des jalons de corvées
+            Débloquez des récompenses spéciales en franchissant des jalons de missions
           </p>
         </div>
 

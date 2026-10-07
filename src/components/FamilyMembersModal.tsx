@@ -308,7 +308,7 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
                     <span>🛡️ Tuteur (Parent)</span>
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    Crée et valide les corvées ({tuteursCount}/2)
+                    Crée et valide les missions ({tuteursCount}/2)
                   </p>
                 </button>
               </div>

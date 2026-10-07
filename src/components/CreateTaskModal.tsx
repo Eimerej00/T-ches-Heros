@@ -208,7 +208,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
 
           {/* Title */}
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Nom de la tâche / corvée</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Nom de la tâche / mission</label>
             <div className="flex gap-2">
               <input
                 type="text"
@@ -413,7 +413,7 @@ export const CreateTaskModal: React.FC<CreateTaskModalProps> = ({
               disabled={isSubmitting}
               className="flex-1 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow-md transition"
             >
-              {isSubmitting ? 'Enregistrement...' : taskToEdit ? 'Mettre à jour' : 'Créer la corvée'}
+              {isSubmitting ? 'Enregistrement...' : taskToEdit ? 'Mettre à jour' : 'Créer la mission'}
             </button>
           </div>
         </form>

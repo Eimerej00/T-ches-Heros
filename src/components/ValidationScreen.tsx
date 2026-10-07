@@ -34,10 +34,6 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
   const [rejectingSubId, setRejectingSubId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
-  const [pinPrompt, setPinPrompt] = useState(false);
-  const [pinInput, setPinInput] = useState('');
-  const [pinError, setPinError] = useState<string | null>(null);
-  const [selectedGuardianToSwitch, setSelectedGuardianToSwitch] = useState<string | null>(null);
 
   const isCurrentTuteur = activeMember?.role === 'tuteur';
   const tuteurs = state.members.filter((m) => m.role === 'tuteur');
@@ -110,7 +106,7 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
   };
 
   const handleClearHistory = async () => {
-    if (!confirm('Voulez-vous supprimer tout l’historique des corvées validées et refusées ?')) {
+    if (!confirm('Voulez-vous supprimer tout l’historique des missions validées et refusées ?')) {
       return;
     }
     const res = await api.dispatchAction('CLEAR_HISTORY', {});
@@ -122,29 +118,7 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
   };
 
   const handleSwitchToGuardian = (guardianId: string) => {
-    if (state.settings.requirePinForValidation) {
-      setSelectedGuardianToSwitch(guardianId);
-      setPinInput('');
-      setPinError(null);
-      setPinPrompt(true);
-    } else {
-      onSelectActiveMember(guardianId);
-      sounds.playSuccess();
-    }
-  };
-
-  const handleVerifyPin = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (pinInput.trim() === state.settings.guardianPin) {
-      if (selectedGuardianToSwitch) {
-        onSelectActiveMember(selectedGuardianToSwitch);
-        sounds.playSuccess();
-      }
-      setPinPrompt(false);
-      setPinError(null);
-    } else {
-      setPinError('Code PIN incorrect');
-    }
+    onSelectActiveMember(guardianId);
   };
 
   return (
@@ -186,7 +160,7 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <h1 className="text-2xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-            <span>Validation des Corvées</span>
+            <span>Validation des Missions</span>
             {pendingSubmissions.length > 0 && (
               <span className="px-2.5 py-0.5 text-xs font-black rounded-full bg-rose-500 text-white animate-bounce">
                 {pendingSubmissions.length}
@@ -235,7 +209,7 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
             </div>
             <h3 className="text-lg font-bold text-slate-900">Toutes les tâches sont à jour !</h3>
             <p className="text-xs sm:text-sm text-slate-500 max-w-sm mx-auto mt-1">
-              Aucune corvée n'attend votre validation pour le moment. Dès qu'un enfant ou joueur déclare une tâche, elle
+              Aucune mission n'attend votre validation pour le moment. Dès qu'un enfant ou joueur déclare une tâche, elle
               apparaîtra ici.
             </p>
           </div>
@@ -347,7 +321,7 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
 
           {historySubmissions.length === 0 ? (
             <div className="py-12 text-center rounded-3xl bg-white border border-slate-200">
-              <p className="text-xs sm:text-sm text-slate-500">Aucune corvée validée ou refusée dans l'historique.</p>
+              <p className="text-xs sm:text-sm text-slate-500">Aucune mission validée ou refusée dans l'historique.</p>
             </div>
           ) : (
             historySubmissions.map((sub) => {
@@ -453,49 +427,6 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
                 Confirmer le refus
               </button>
             </div>
-          </div>
-        </div>
-      )}
-
-      {/* PIN Prompt Modal */}
-      {pinPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
-          <div className="w-full max-w-xs rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 text-slate-800 text-center">
-            <div className="w-12 h-12 mx-auto rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mb-3">
-              <Lock className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-extrabold text-slate-900">Code PIN Tuteur</h3>
-            <p className="text-xs text-slate-500 mt-1 mb-4">
-              Entrez le code secret des parents pour accéder au mode validation
-            </p>
-
-            <form onSubmit={handleVerifyPin} className="space-y-3">
-              {pinError && <div className="text-xs text-rose-600 font-semibold">{pinError}</div>}
-              <input
-                type="password"
-                maxLength={4}
-                autoFocus
-                value={pinInput}
-                onChange={(e) => setPinInput(e.target.value)}
-                placeholder="••••"
-                className="w-32 text-center text-2xl tracking-widest py-2 px-3 mx-auto rounded-xl border border-slate-300 focus:border-indigo-500 outline-hidden block"
-              />
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setPinPrompt(false)}
-                  className="flex-1 py-2 rounded-xl border border-slate-200 text-xs font-semibold"
-                >
-                  Annuler
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2 rounded-xl bg-indigo-600 text-white text-xs font-bold"
-                >
-                  Valider
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       )}

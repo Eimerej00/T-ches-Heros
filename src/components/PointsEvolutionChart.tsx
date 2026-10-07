@@ -256,7 +256,7 @@ export const PointsEvolutionChart: React.FC<PointsEvolutionChartProps> = ({ stat
       <div className="flex items-center gap-2 text-[11px] text-slate-400 pt-1 border-t border-slate-100">
         <Info className="w-3.5 h-3.5 flex-shrink-0 text-slate-400" />
         <span>
-          Les points grimpent au fur et à mesure que les corvées sont validées par les tuteurs.
+          Les points grimpent au fur et à mesure que les missions sont validées par les tuteurs.
         </span>
       </div>
     </div>

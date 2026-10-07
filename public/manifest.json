@@ -38,16 +38,16 @@
   ],
   "shortcuts": [
     {
-      "name": "Corvées",
-      "short_name": "Corvées",
-      "description": "Voir la liste des corvées",
+      "name": "Missions",
+      "short_name": "Missions",
+      "description": "Voir la liste des missions",
       "url": "/",
       "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
     },
     {
       "name": "Validation",
       "short_name": "Validation",
-      "description": "Valider les corvées des enfants",
+      "description": "Valider les missions des enfants",
       "url": "/",
       "icons": [{ "src": "/pwa-192x192.png", "sizes": "192x192" }]
     }

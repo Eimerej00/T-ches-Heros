@@ -45,7 +45,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
   };
 
   const handleResetPoints = async () => {
-    if (!confirm('Remettre les points à 0 pour tous les membres de la famille ? (Les membres et les corvées sont conservés)')) {
+    if (!confirm('Remettre les points à 0 pour tous les membres de la famille ? (Les membres et les missions sont conservés)')) {
       return;
     }
     const res = await api.dispatchAction('RESET_POINTS', {});

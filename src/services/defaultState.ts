@@ -15,8 +15,8 @@ export const INITIAL_STATE: FamilyState = {
   settings: {
     familyName: 'La Tribu des Héros',
     familyCode: 'TRIBU-42',
-    guardianPin: '1234',
-    requirePinForValidation: false,
+    guardianPin: '1805',
+    requirePinForValidation: true,
   },
   members: [
     {

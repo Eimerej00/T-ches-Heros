@@ -70,7 +70,7 @@ export const MemberPointsHistory: React.FC<MemberPointsHistoryProps> = ({ state,
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Historique des corvées validées et des points crédités
+              Historique des missions validées et des points crédités
             </p>
           </div>
         </div>
@@ -80,7 +80,7 @@ export const MemberPointsHistory: React.FC<MemberPointsHistoryProps> = ({ state,
           <div className="px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs font-bold flex items-center gap-1.5 shadow-2xs">
             <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
             <span>
-              {validatedSubmissions.length} corvée{validatedSubmissions.length > 1 ? 's' : ''} validée{validatedSubmissions.length > 1 ? 's' : ''}
+              {validatedSubmissions.length} mission{validatedSubmissions.length > 1 ? 's' : ''} validée{validatedSubmissions.length > 1 ? 's' : ''}
             </span>
           </div>
 
@@ -98,10 +98,10 @@ export const MemberPointsHistory: React.FC<MemberPointsHistoryProps> = ({ state,
             🌱
           </div>
           <h3 className="text-sm font-extrabold text-slate-800">
-            Aucune corvée validée pour le moment
+            Aucune mission validée pour le moment
           </h3>
           <p className="text-xs text-slate-500 max-w-sm mx-auto">
-            Dès que <strong>{activeMember.name}</strong> accomplit une corvée et qu'un tuteur la valide,
+            Dès que <strong>{activeMember.name}</strong> accomplit une mission et qu'un tuteur la valide,
             les points et la date apparaîtront ici !
           </p>
         </div>
@@ -180,7 +180,7 @@ export const MemberPointsHistory: React.FC<MemberPointsHistoryProps> = ({ state,
                 ) : (
                   <>
                     <ChevronDown className="w-3.5 h-3.5" />
-                    <span>Voir tout l’historique ({validatedSubmissions.length} corvées)</span>
+                    <span>Voir tout l’historique ({validatedSubmissions.length} missions)</span>
                   </>
                 )}
               </button>

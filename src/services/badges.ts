@@ -23,7 +23,7 @@ export const ALL_BADGES: BadgeItem[] = [
   {
     id: 'premiere_corvee',
     title: 'Première Victoire',
-    description: 'Accomplir et faire valider sa 1ère corvée',
+    description: 'Accomplir et faire valider sa 1ère mission',
     icon: '🌱',
     tier: 'bronze',
     category: 'Général',
@@ -31,15 +31,15 @@ export const ALL_BADGES: BadgeItem[] = [
   {
     id: 'apprenti_5',
     title: 'Apprenti Courageux',
-    description: 'Valider 5 corvées au total',
+    description: 'Valider 5 missions au total',
     icon: '🧹',
     tier: 'bronze',
     category: 'Général',
   },
   {
     id: 'dix_corvees',
-    title: '10 Corvées Terminées',
-    description: 'Atteindre le cap de 10 corvées accomplies et validées',
+    title: '10 Missions Terminées',
+    description: 'Atteindre le cap de 10 missions accomplies et validées',
     icon: '⭐',
     tier: 'argent',
     category: 'Général',
@@ -47,7 +47,7 @@ export const ALL_BADGES: BadgeItem[] = [
   {
     id: 'maitre_du_rangement',
     title: 'Maître du Rangement',
-    description: 'Réaliser 5 corvées de chambre ou de ménage',
+    description: 'Réaliser 5 missions de chambre ou de ménage',
     icon: '🛏️',
     tier: 'or',
     category: 'Rangement',
@@ -55,7 +55,7 @@ export const ALL_BADGES: BadgeItem[] = [
   {
     id: 'as_cuisine',
     title: 'As de la Cuisine',
-    description: 'Réaliser 5 corvées en cuisine (table, vaisselle...)',
+    description: 'Réaliser 5 missions en cuisine (table, vaisselle...)',
     icon: '🍽️',
     tier: 'argent',
     category: 'Cuisine',
@@ -79,7 +79,7 @@ export const ALL_BADGES: BadgeItem[] = [
   {
     id: 'touche_a_tout',
     title: 'Touche-à-Tout',
-    description: 'Réaliser des corvées dans au moins 3 catégories différentes',
+    description: 'Réaliser des missions dans au moins 3 catégories différentes',
     icon: '🌈',
     tier: 'or',
     category: 'Polyvalence',

@@ -23,6 +23,7 @@ import { FamilyMembersModal } from './components/FamilyMembersModal.tsx';
 import { CreateTaskModal } from './components/CreateTaskModal.tsx';
 import { SubmitTaskModal } from './components/SubmitTaskModal.tsx';
 import { SettingsModal } from './components/SettingsModal.tsx';
+import { PinModal } from './components/PinModal.tsx';
 import { sounds } from './services/audio.ts';
 
 type NavigationTab = 'corvees' | 'validation' | 'recompenses' | 'classement';
@@ -39,6 +40,7 @@ export default function App() {
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<ChoreTask | null>(null);
   const [taskToSubmit, setTaskToSubmit] = useState<ChoreTask | null>(null);
+  const [pendingGuardianMember, setPendingGuardianMember] = useState<FamilyMember | null>(null);
 
   // Sync state
   const [syncStatus, setSyncStatus] = useState(api.getSyncStatus());
@@ -65,6 +67,27 @@ export default function App() {
   const handleSelectActiveMember = (id: string) => {
     setActiveMemberId(id);
     api.setActiveMemberId(id);
+  };
+
+  const handleRequestSelectActiveMember = (id: string) => {
+    if (!state) return;
+    const target = state.members.find((m) => m.id === id);
+    if (!target) return;
+
+    if (activeMemberId === id) return;
+
+    const currentMember = state.members.find((m) => m.id === activeMemberId);
+
+    // Require PIN if target is a guardian (tuteur) AND (current is a child (joueur), or PIN required by settings)
+    const isTargetGuardian = target.role === 'tuteur';
+    const isCurrentChild = !currentMember || currentMember.role === 'joueur';
+    const requiresPin = isTargetGuardian && (isCurrentChild || state.settings.requirePinForValidation);
+
+    if (requiresPin) {
+      setPendingGuardianMember(target);
+    } else {
+      handleSelectActiveMember(id);
+    }
   };
 
   const handleOpenCreateTask = (task?: ChoreTask) => {
@@ -97,7 +120,7 @@ export default function App() {
       {!syncStatus.isOnline && (
         <div className="bg-amber-500 text-white text-xs font-bold py-1.5 px-4 text-center flex items-center justify-center gap-2 shadow-xs">
           <WifiOff className="w-3.5 h-3.5" />
-          <span>Mode Hors-Ligne — Les corvées enregistrées seront synchronisées dès reconnexion au Wi-Fi.</span>
+          <span>Mode Hors-Ligne — Les missions enregistrées seront synchronisées dès reconnexion au Wi-Fi.</span>
         </div>
       )}
 
@@ -105,7 +128,7 @@ export default function App() {
       <Header
         state={state}
         activeMember={activeMember}
-        onSelectActiveMember={handleSelectActiveMember}
+        onSelectActiveMember={handleRequestSelectActiveMember}
         onOpenWifiModal={() => setIsWifiModalOpen(true)}
         onOpenMembersModal={() => setIsMembersModalOpen(true)}
         onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
@@ -176,7 +199,7 @@ export default function App() {
             }`}
           >
             <CheckSquare className="w-4 h-4" />
-            <span>Tâches & Corvées</span>
+            <span>Tâches & Missions</span>
           </button>
 
           <button
@@ -246,7 +269,7 @@ export default function App() {
           <ValidationScreen
             state={state}
             activeMember={activeMember}
-            onSelectActiveMember={handleSelectActiveMember}
+            onSelectActiveMember={handleRequestSelectActiveMember}
           />
         )}
 
@@ -271,7 +294,7 @@ export default function App() {
           }`}
         >
           <CheckSquare className="w-5 h-5 mb-0.5" />
-          <span>Corvées</span>
+          <span>Missions</span>
         </button>
 
         <button
@@ -344,7 +367,7 @@ export default function App() {
         onClose={() => setIsMembersModalOpen(false)}
         members={state.members}
         activeMemberId={activeMemberId}
-        onSelectActiveMember={handleSelectActiveMember}
+        onSelectActiveMember={handleRequestSelectActiveMember}
       />
 
       <CreateTaskModal
@@ -370,6 +393,19 @@ export default function App() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
         state={state}
+      />
+
+      <PinModal
+        isOpen={!!pendingGuardianMember}
+        targetMember={pendingGuardianMember}
+        correctPin={state.settings.guardianPin || '1805'}
+        onSuccess={() => {
+          if (pendingGuardianMember) {
+            handleSelectActiveMember(pendingGuardianMember.id);
+            setPendingGuardianMember(null);
+          }
+        }}
+        onClose={() => setPendingGuardianMember(null)}
       />
     </div>
   );

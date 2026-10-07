@@ -108,7 +108,7 @@ export const SubmitTaskModal: React.FC<SubmitTaskModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg font-extrabold text-slate-900 leading-snug">
-                Déclarer une corvée faite
+                Déclarer une mission faite
               </h2>
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
@@ -270,7 +270,7 @@ export const SubmitTaskModal: React.FC<SubmitTaskModalProps> = ({
               className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold text-xs shadow-md active:scale-95 transition flex items-center justify-center gap-1.5"
             >
               <Send className="w-3.5 h-3.5" />
-              <span>{isSubmitting ? 'Envoi...' : `J'ai fait cette corvée ! (+${task.points} pts)`}</span>
+              <span>{isSubmitting ? 'Envoi...' : `J'ai fait cette mission ! (+${task.points} pts)`}</span>
             </button>
           </div>
         </form>
