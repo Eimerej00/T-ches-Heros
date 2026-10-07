@@ -3,8 +3,13 @@ const CACHE_NAME = 'taches-heros-cache-v1';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
+  '/manifest.json',
   '/manifest.webmanifest',
-  '/icon.svg'
+  '/icon.svg',
+  '/pwa-192x192.png',
+  '/pwa-512x512.png',
+  '/pwa-maskable-512x512.png',
+  '/apple-touch-icon.png'
 ];
 
 self.addEventListener('install', (event) => {
