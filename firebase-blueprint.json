@@ -1,0 +1,46 @@
+{
+  "entities": {
+    "FamilyState": {
+      "title": "FamilyState",
+      "description": "State of the family chores app including members, tasks, submissions, and rewards",
+      "type": "object",
+      "properties": {
+        "settings": {
+          "type": "object",
+          "description": "Settings for the family"
+        },
+        "members": {
+          "type": "array",
+          "description": "List of family members and their roles and points"
+        },
+        "tasks": {
+          "type": "array",
+          "description": "List of chores and duties"
+        },
+        "submissions": {
+          "type": "array",
+          "description": "List of submitted chore declarations"
+        },
+        "rewards": {
+          "type": "array",
+          "description": "List of rewards in the shop"
+        },
+        "rewardClaims": {
+          "type": "array",
+          "description": "List of claimed rewards"
+        },
+        "lastUpdated": {
+          "type": "number",
+          "description": "Timestamp of the last modification"
+        }
+      },
+      "required": ["settings", "members", "tasks", "submissions", "rewards", "rewardClaims", "lastUpdated"]
+    }
+  },
+  "firestore": {
+    "/families/{familyId}": {
+      "schema": "FamilyState",
+      "description": "Stores the synchronized real-time family chores and reward state"
+    }
+  }
+}

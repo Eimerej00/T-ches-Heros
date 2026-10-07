@@ -1,8 +1,10 @@
 import type { FamilyState } from '../types.ts';
 import { INITIAL_STATE, applyLocalAction } from './defaultState.ts';
+import { db, doc, onSnapshot, setDoc, getDoc } from './firebase.ts';
 
 const LOCAL_STORAGE_KEY = 'taches_heros_state_v1';
 const ACTIVE_MEMBER_KEY = 'taches_heros_active_member_id';
+const FIRESTORE_FAMILY_DOC = 'main';
 
 class ApiService {
   private state: FamilyState | null = null;
@@ -11,10 +13,12 @@ class ApiService {
   private isSyncing: boolean = false;
   private pollInterval: number | null = null;
   private syncError: string | null = null;
+  private isFirestoreConnected: boolean = false;
 
   constructor() {
     this.loadLocalCache();
     this.setupNetworkListeners();
+    this.initFirestoreSync();
     this.startPolling();
   }
 
@@ -45,6 +49,53 @@ class ApiService {
     this.notify();
   }
 
+  private initFirestoreSync() {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
+
+      // Listen to real-time changes across all family devices
+      onSnapshot(
+        familyRef,
+        (snapshot) => {
+          this.isFirestoreConnected = true;
+          this.isOnline = true;
+          this.syncError = null;
+
+          if (snapshot.exists()) {
+            const data = snapshot.data() as FamilyState;
+            if (data && data.members && data.tasks) {
+              // Only apply if incoming data is newer or local is uninitialized
+              if (!this.state || (data.lastUpdated && data.lastUpdated >= (this.state.lastUpdated || 0))) {
+                this.state = data;
+                try {
+                  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+                } catch {
+                  // Ignore
+                }
+                this.notify();
+              }
+            }
+          } else {
+            // First time setup on cloud: initialize Firestore with initial state
+            if (this.state) {
+              setDoc(familyRef, this.state).catch((err) => {
+                console.warn('Firestore initial setDoc notice:', err);
+              });
+            }
+          }
+        },
+        (error) => {
+          console.warn('Firestore real-time sync notice:', error.message);
+          this.isFirestoreConnected = false;
+        }
+      );
+    } catch (err) {
+      console.warn('Could not initialize Firestore sync:', err);
+    }
+  }
+
   private setupNetworkListeners() {
     if (typeof window === 'undefined') return;
 
@@ -72,12 +123,12 @@ class ApiService {
     // Fetch immediately
     this.fetchState();
 
-    // Poll every 3 seconds for seamless Wi-Fi synchronization across phones
+    // Secondary fallback poll
     this.pollInterval = window.setInterval(() => {
       if (document.visibilityState === 'visible' && !this.isSyncing) {
         this.fetchState();
       }
-    }, 3000);
+    }, 5000);
   }
 
   public subscribe(cb: (state: FamilyState) => void): () => void {
@@ -111,6 +162,23 @@ class ApiService {
     this.isSyncing = true;
 
     try {
+      // 1. First try Firestore cloud sync
+      try {
+        const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
+        const snap = await getDoc(familyRef);
+        if (snap.exists()) {
+          const cloudData = snap.data() as FamilyState;
+          if (cloudData && cloudData.members) {
+            this.syncError = null;
+            this.saveLocalCache(cloudData);
+            return cloudData;
+          }
+        }
+      } catch {
+        // Firestore fetch fallback to local API
+      }
+
+      // 2. Try Local Express server if running
       const res = await fetch('/api/state', {
         headers: { 'Cache-Control': 'no-cache' },
       });
@@ -130,36 +198,43 @@ class ApiService {
 
   public async dispatchAction(type: string, payload: unknown): Promise<{ success: boolean; state?: FamilyState; error?: string }> {
     this.isSyncing = true;
-    try {
-      const res = await fetch('/api/action', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type, payload }),
-      });
 
-      if (res.ok) {
-        const data = await res.json();
-        if (data.state) {
-          this.saveLocalCache(data.state);
+    try {
+      // 1. Calculate new state with local action reducer
+      if (this.state) {
+        const localResult = applyLocalAction(this.state, type, payload);
+        if (!localResult.success) {
+          return { success: false, error: localResult.error || 'Action impossible' };
         }
-        return { success: true, state: data.state };
+
+        const updatedState = localResult.state;
+        this.saveLocalCache(updatedState);
+
+        // 2. Broadcast immediately to Firebase Firestore so all family phones receive update
+        try {
+          const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
+          setDoc(familyRef, updatedState).catch((cloudErr) => {
+            console.warn('Cloud Firestore sync notice:', cloudErr);
+          });
+        } catch (e) {
+          console.warn('Firestore dispatch notice:', e);
+        }
+
+        // 3. Also notify local Express server if available
+        try {
+          fetch('/api/action', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type, payload }),
+          }).catch(() => {});
+        } catch {
+          // Ignore
+        }
+
+        return { success: true, state: updatedState };
       }
-    } catch {
-      // Backend not available (e.g. GitHub Pages or offline) -> Apply locally
     } finally {
       this.isSyncing = false;
-    }
-
-    // Fallback: apply action locally on cached state
-    if (this.state) {
-      const result = applyLocalAction(this.state, type, payload);
-      if (result.success && result.state) {
-        this.saveLocalCache(result.state);
-        return { success: true, state: result.state };
-      }
-      return { success: false, error: result.error || 'Erreur lors du traitement local' };
     }
 
     return { success: false, error: 'État introuvable' };
@@ -184,9 +259,11 @@ class ApiService {
 
     const host = typeof window !== 'undefined' ? window.location.host : 'localhost:3000';
     const proto = typeof window !== 'undefined' ? window.location.protocol : 'http:';
+    const currentFullUrl = typeof window !== 'undefined' ? window.location.href.split('#')[0] : `${proto}//${host}`;
+
     return {
-      primaryUrl: `${proto}//${host}`,
-      wifiUrls: [`${proto}//${host}`],
+      primaryUrl: currentFullUrl,
+      wifiUrls: [currentFullUrl],
       localIps: [],
       port: 3000,
       familyCode: this.state?.settings.familyCode || 'TRIBU-42',
