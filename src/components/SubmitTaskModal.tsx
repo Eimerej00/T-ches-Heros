@@ -28,16 +28,18 @@ export const SubmitTaskModal: React.FC<SubmitTaskModalProps> = ({
 
   // Sync selectedMemberId if modal opens or activeMemberId changes
   React.useEffect(() => {
-    if (activeMemberId) {
-      setSelectedMemberId(activeMemberId);
-    } else if (members.length > 0) {
-      setSelectedMemberId(members[0].id);
+    if (isOpen) {
+      if (activeMemberId) {
+        setSelectedMemberId(activeMemberId);
+      } else if (members.length > 0) {
+        setSelectedMemberId(members[0].id);
+      }
+      setDayChoice('today');
+      setCustomDate(new Date().toISOString().split('T')[0]);
+      setNote('');
+      setErrorMsg(null);
     }
-    setDayChoice('today');
-    setCustomDate(new Date().toISOString().split('T')[0]);
-    setNote('');
-    setErrorMsg(null);
-  }, [task, activeMemberId, members, isOpen]);
+  }, [task, activeMemberId, isOpen]);
 
   if (!isOpen || !task) return null;
 

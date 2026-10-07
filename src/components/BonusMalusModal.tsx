@@ -61,20 +61,19 @@ export const BonusMalusModal: React.FC<BonusMalusModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Initialize form state ONLY when opening the modal
   useEffect(() => {
     if (isOpen) {
-      if (!selectedMemberId || !players.some((p) => p.id === selectedMemberId)) {
-        if (players.length > 0) {
-          setSelectedMemberId(players[0].id);
-        }
-      }
+      const playerList = state.members.filter((m) => m.role === 'joueur');
+      const defaultId = playerList.length > 0 ? playerList[0].id : (state.members[0]?.id || '');
+      setSelectedMemberId(defaultId);
       setIsBonus(true);
       setPointsAmount(10);
       setReason('');
       setErrorMsg(null);
       setIsSubmitting(false);
     }
-  }, [isOpen, players]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 

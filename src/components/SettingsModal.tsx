@@ -18,6 +18,17 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
+  React.useEffect(() => {
+    if (isOpen) {
+      setFamilyName(state.settings.familyName);
+      setFamilyCode(state.settings.familyCode);
+      setGuardianPin(state.settings.guardianPin);
+      setRequirePin(state.settings.requirePinForValidation);
+      setMessage(null);
+      setIsSubmitting(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   const handleSave = async (e: React.FormEvent) => {
