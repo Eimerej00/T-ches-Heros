@@ -1,4 +1,5 @@
 import express from 'express';
+import http from 'http';
 import os from 'os';
 import fs from 'fs';
 import path from 'path';
@@ -672,10 +673,16 @@ async function startServer() {
 
   // Dev server with Vite middleware vs Production static
   const isProduction = process.env.NODE_ENV === 'production';
+  const httpServer = http.createServer(app);
+
   if (!isProduction) {
     const { createServer: createViteServer } = await import('vite');
+    const isHmrDisabled = process.env.DISABLE_HMR === 'true';
     const vite = await createViteServer({
-      server: { middlewareMode: true },
+      server: {
+        middlewareMode: true,
+        hmr: isHmrDisabled ? false : { server: httpServer },
+      },
       appType: 'spa',
     });
     app.use(vite.middlewares);
@@ -686,7 +693,7 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, '0.0.0.0', () => {
+  httpServer.listen(PORT, '0.0.0.0', () => {
     const localIps = getLocalIpAddresses();
     console.log(`✨ Serveur Tâches & Héros démarré sur le port ${PORT}`);
     console.log(`📱 Accès local: http://localhost:${PORT}`);
