@@ -1,4 +1,5 @@
 import type { FamilyState } from '../types.ts';
+import { INITIAL_STATE, applyLocalAction } from './defaultState.ts';
 
 const LOCAL_STORAGE_KEY = 'taches_heros_state_v1';
 const ACTIVE_MEMBER_KEY = 'taches_heros_active_member_id';
@@ -18,14 +19,20 @@ class ApiService {
   }
 
   private loadLocalCache() {
+    let loadedState: FamilyState | null = null;
     try {
       const saved = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (saved) {
-        this.state = JSON.parse(saved);
+        loadedState = JSON.parse(saved);
       }
     } catch {
       // Ignore
     }
+
+    if (!loadedState) {
+      loadedState = JSON.parse(JSON.stringify(INITIAL_STATE));
+    }
+    this.saveLocalCache(loadedState!);
   }
 
   private saveLocalCache(state: FamilyState) {
@@ -107,19 +114,18 @@ class ApiService {
       const res = await fetch('/api/state', {
         headers: { 'Cache-Control': 'no-cache' },
       });
-      if (!res.ok) {
-        throw new Error(`HTTP error: ${res.status}`);
+      if (res.ok) {
+        const data: FamilyState = await res.json();
+        this.syncError = null;
+        this.saveLocalCache(data);
+        return data;
       }
-      const data: FamilyState = await res.json();
-      this.syncError = null;
-      this.saveLocalCache(data);
-      return data;
     } catch (err: unknown) {
       this.syncError = (err as Error).message || 'Échec de synchronisation';
-      return this.state;
     } finally {
       this.isSyncing = false;
     }
+    return this.state;
   }
 
   public async dispatchAction(type: string, payload: unknown): Promise<{ success: boolean; state?: FamilyState; error?: string }> {
@@ -133,21 +139,30 @@ class ApiService {
         body: JSON.stringify({ type, payload }),
       });
 
-      const data = await res.json();
-      if (!res.ok) {
-        return { success: false, error: data.error || 'Une erreur est survenue' };
+      if (res.ok) {
+        const data = await res.json();
+        if (data.state) {
+          this.saveLocalCache(data.state);
+        }
+        return { success: true, state: data.state };
       }
-
-      if (data.state) {
-        this.saveLocalCache(data.state);
-      }
-      return { success: true, state: data.state };
-    } catch (err: unknown) {
-      const errorMsg = (err as Error).message || 'Connexion réseau impossible';
-      return { success: false, error: errorMsg };
+    } catch {
+      // Backend not available (e.g. GitHub Pages or offline) -> Apply locally
     } finally {
       this.isSyncing = false;
     }
+
+    // Fallback: apply action locally on cached state
+    if (this.state) {
+      const result = applyLocalAction(this.state, type, payload);
+      if (result.success && result.state) {
+        this.saveLocalCache(result.state);
+        return { success: true, state: result.state };
+      }
+      return { success: false, error: result.error || 'Erreur lors du traitement local' };
+    }
+
+    return { success: false, error: 'État introuvable' };
   }
 
   public async getNetworkInfo(): Promise<{
