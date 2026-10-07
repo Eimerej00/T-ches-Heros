@@ -76,12 +76,12 @@ export default function App() {
 
     if (activeMemberId === id) return;
 
-    const currentMember = state.members.find((m) => m.id === activeMemberId);
+    const currentMember = state.members.find((m) => m.id === activeMemberId) || activeMember;
 
-    // Require PIN if target is a guardian (tuteur) AND (current is a child (joueur), or PIN required by settings)
+    // Require PIN if target is a guardian (tuteur) AND (current is a child/joueur, or PIN required by settings)
     const isTargetGuardian = target.role === 'tuteur';
-    const isCurrentChild = !currentMember || currentMember.role === 'joueur';
-    const requiresPin = isTargetGuardian && (isCurrentChild || state.settings.requirePinForValidation);
+    const isCurrentGuardian = currentMember?.role === 'tuteur';
+    const requiresPin = isTargetGuardian && (!isCurrentGuardian || state.settings?.requirePinForValidation);
 
     if (requiresPin) {
       setPendingGuardianMember(target);

@@ -36,7 +36,7 @@ export const PinModal: React.FC<PinModalProps> = ({
 
   if (!isOpen || !targetMember) return null;
 
-  const effectiveCorrectPin = correctPin?.trim() || '1805';
+  const effectiveCorrectPin = (typeof correctPin === 'string' ? correctPin : String(correctPin ?? '1805')).trim() || '1805';
 
   const handleVerify = (candidatePin: string) => {
     if (candidatePin === effectiveCorrectPin) {
@@ -45,8 +45,7 @@ export const PinModal: React.FC<PinModalProps> = ({
       sounds.playSuccess();
       setTimeout(() => {
         onSuccess();
-        onClose();
-      }, 300);
+      }, 250);
     } else {
       sounds.playPop();
       setError('Code PIN incorrect. Veuillez réessayer.');
@@ -85,7 +84,7 @@ export const PinModal: React.FC<PinModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 animate-in fade-in duration-200">
       <div className="w-full max-w-sm rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 text-slate-800 my-auto text-center animate-in zoom-in-95 duration-150">
         {/* Header */}
         <div className="flex justify-end">

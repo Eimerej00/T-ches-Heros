@@ -157,9 +157,13 @@ export const MemberPointsHistory: React.FC<MemberPointsHistoryProps> = ({ state,
 
               {/* Right: Points Pill */}
               <div className="flex items-center justify-end sm:justify-center">
-                <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-emerald-500 text-white font-black text-xs sm:text-sm shadow-xs">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-100" />
-                  +{sub.points} pts
+                <span
+                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-white font-black text-xs sm:text-sm shadow-xs ${
+                    sub.points >= 0 ? 'bg-emerald-500' : 'bg-rose-500'
+                  }`}
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-white/80" />
+                  {sub.points > 0 ? `+${sub.points}` : sub.points} pts
                 </span>
               </div>
             </div>

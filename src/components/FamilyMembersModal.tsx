@@ -211,6 +211,7 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
                         onClick={() => {
                           onSelectActiveMember(member.id);
                           sounds.playPop();
+                          onClose();
                         }}
                         className={`text-xs px-2.5 py-1.5 rounded-xl font-medium transition ${
                           isActive

@@ -13,7 +13,7 @@ export interface FamilyMember {
   createdAt: string;
 }
 
-export type TaskCategory = 'cuisine' | 'chambre' | 'animaux' | 'menage' | 'ecole' | 'quotidien' | 'jardin';
+export type TaskCategory = 'cuisine' | 'chambre' | 'animaux' | 'menage' | 'ecole' | 'quotidien' | 'jardin' | 'bonus' | 'malus';
 
 export type TaskFrequency = 'quotidien' | 'hebdo' | 'libre';
 

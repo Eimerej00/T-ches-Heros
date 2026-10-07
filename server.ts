@@ -661,6 +661,55 @@ async function startServer() {
         return res.json({ success: true, state });
       }
 
+      case 'APPLY_BONUS_MALUS': {
+        const { memberId, points, isBonus, reason, guardianId, guardianName } = payload;
+        const member = state.members.find((m) => m.id === memberId);
+        if (!member) {
+          return res.status(400).json({ error: 'Joueur introuvable' });
+        }
+
+        const amount = Math.abs(Number(points) || 0);
+        if (amount <= 0) {
+          return res.status(400).json({ error: 'Le nombre de points doit être supérieur à 0' });
+        }
+
+        const guardian = state.members.find((m) => m.id === guardianId);
+        const effectiveGuardianName = guardian?.name || guardianName || 'Tuteur';
+
+        if (isBonus) {
+          member.points += amount;
+          member.totalEarnedPoints += amount;
+          const { level, title } = calculateLevel(member.totalEarnedPoints);
+          member.level = level;
+          member.title = title;
+        } else {
+          member.points = Math.max(0, member.points - amount);
+        }
+
+        const historyEntry: ChoreSubmission = {
+          id: `sub-bm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+          taskId: isBonus ? 'bonus' : 'malus',
+          taskTitle: isBonus ? `Bonus : ${reason || 'Points bonus'}` : `Malus : ${reason || 'Retrait de points'}`,
+          taskIcon: isBonus ? '⭐' : '⚠️',
+          taskCategory: (isBonus ? 'bonus' : 'malus') as any,
+          points: isBonus ? amount : -amount,
+          submittedBy: member.id,
+          submittedByName: member.name,
+          completedDate: new Date().toISOString().split('T')[0],
+          completedDateLabel: 'Aujourd’hui',
+          submittedAt: new Date().toISOString(),
+          status: 'validee',
+          validatedBy: guardianId,
+          validatedByName: effectiveGuardianName,
+          validatedAt: new Date().toISOString(),
+          note: reason ? reason.trim() : (isBonus ? 'Bonus accordé par le tuteur' : 'Malus appliqué par le tuteur'),
+        };
+
+        state.submissions.unshift(historyEntry);
+        persistState();
+        return res.json({ success: true, member, state });
+      }
+
       default:
         return res.status(400).json({ error: `Type d'action inconnu: ${type}` });
     }

@@ -36,8 +36,8 @@
       "role": "joueur",
       "avatar": "🚀",
       "color": "#10b981",
-      "points": 0,
-      "totalEarnedPoints": 0,
+      "points": 10,
+      "totalEarnedPoints": 10,
       "level": 1,
       "title": "Novice en Mission 🌱",
       "createdAt": "2026-01-02T10:00:00Z"
@@ -175,7 +175,26 @@
       "isActive": true
     }
   ],
-  "submissions": [],
+  "submissions": [
+    {
+      "id": "sub-bm-1791358520572-iw1g",
+      "taskId": "bonus",
+      "taskTitle": "Bonus : Test Bonus",
+      "taskIcon": "⭐",
+      "taskCategory": "bonus",
+      "points": 10,
+      "submittedBy": "m-3",
+      "submittedByName": "Philéas",
+      "completedDate": "2026-10-07",
+      "completedDateLabel": "Aujourd’hui",
+      "submittedAt": "2026-10-07T07:35:20.572Z",
+      "status": "validee",
+      "validatedBy": "m-1",
+      "validatedByName": "Maman",
+      "validatedAt": "2026-10-07T07:35:20.572Z",
+      "note": "Test Bonus"
+    }
+  ],
   "rewards": [
     {
       "id": "rew-1",
@@ -224,5 +243,5 @@
     }
   ],
   "rewardClaims": [],
-  "lastUpdated": 1791288941576
+  "lastUpdated": 1791358520572
 }

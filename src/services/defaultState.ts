@@ -531,6 +531,53 @@ export function applyLocalAction(
       return { success: true, state: JSON.parse(JSON.stringify(INITIAL_STATE)) };
     }
 
+    case 'APPLY_BONUS_MALUS': {
+      const { memberId, points, isBonus, reason, guardianId, guardianName } = payload;
+      const member = state.members.find((m) => m.id === memberId);
+      if (!member) return { success: false, state, error: 'Joueur introuvable' };
+
+      const amount = Math.abs(Number(points) || 0);
+      if (amount <= 0) {
+        return { success: false, state, error: 'Le nombre de points doit être supérieur à 0' };
+      }
+
+      const guardian = state.members.find((m) => m.id === guardianId);
+      const effectiveGuardianName = guardian?.name || guardianName || 'Tuteur';
+
+      if (isBonus) {
+        member.points += amount;
+        member.totalEarnedPoints += amount;
+        const { level, title } = calculateLevel(member.totalEarnedPoints);
+        member.level = level;
+        member.title = title;
+      } else {
+        member.points = Math.max(0, member.points - amount);
+      }
+
+      const historyEntry: ChoreSubmission = {
+        id: `sub-bm-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        taskId: isBonus ? 'bonus' : 'malus',
+        taskTitle: isBonus ? `Bonus : ${reason || 'Points bonus'}` : `Malus : ${reason || 'Retrait de points'}`,
+        taskIcon: isBonus ? '⭐' : '⚠️',
+        taskCategory: isBonus ? 'bonus' : 'malus',
+        points: isBonus ? amount : -amount,
+        submittedBy: member.id,
+        submittedByName: member.name,
+        completedDate: new Date().toISOString().split('T')[0],
+        completedDateLabel: 'Aujourd’hui',
+        submittedAt: new Date().toISOString(),
+        status: 'validee',
+        validatedBy: guardianId,
+        validatedByName: effectiveGuardianName,
+        validatedAt: new Date().toISOString(),
+        note: reason ? reason.trim() : (isBonus ? 'Bonus accordé par le tuteur' : 'Malus appliqué par le tuteur'),
+      };
+
+      state.submissions.unshift(historyEntry);
+      state.lastUpdated = Date.now();
+      return { success: true, state };
+    }
+
     default:
       return { success: false, state, error: 'Action inconnue' };
   }

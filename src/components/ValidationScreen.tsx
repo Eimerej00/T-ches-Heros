@@ -18,6 +18,7 @@ import {
 import type { ChoreSubmission, FamilyMember, FamilyState } from '../types.ts';
 import { api } from '../services/api.ts';
 import { sounds } from '../services/audio.ts';
+import { BonusMalusModal } from './BonusMalusModal.tsx';
 
 interface ValidationScreenProps {
   state: FamilyState;
@@ -34,6 +35,7 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
   const [rejectingSubId, setRejectingSubId] = useState<string | null>(null);
   const [rejectReason, setRejectReason] = useState<string>('');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [isBonusMalusOpen, setIsBonusMalusOpen] = useState<boolean>(false);
 
   const isCurrentTuteur = activeMember?.role === 'tuteur';
   const tuteurs = state.members.filter((m) => m.role === 'tuteur');
@@ -173,7 +175,7 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
         </div>
 
         {/* Tab buttons */}
-        <div className="flex bg-slate-100 p-1 rounded-2xl border border-slate-200 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-1 bg-slate-100 p-1 rounded-2xl border border-slate-200 self-start sm:self-auto">
           <button
             onClick={() => setActiveTab('pending')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
@@ -185,6 +187,34 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
             <Clock className="w-3.5 h-3.5" />
             <span>À valider ({pendingSubmissions.length})</span>
           </button>
+
+          {/* Bouton Bonus Malus accessible aux tuteurs */}
+          {isCurrentTuteur ? (
+            <button
+              onClick={() => {
+                sounds.playPop();
+                setIsBonusMalusOpen(true);
+              }}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-black transition flex items-center gap-1.5 bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 hover:from-amber-600 hover:to-purple-700 text-white shadow-xs active:scale-95 cursor-pointer"
+              title="Ajouter ou retirer des points à un joueur (Bonus/Malus)"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-200" />
+              <span>Bonus Malus</span>
+            </button>
+          ) : (
+            <button
+              onClick={() => {
+                sounds.playPop();
+                alert('Le Bonus / Malus est réservé aux tuteurs. Veuillez passer sur votre profil tuteur avec le code PIN.');
+              }}
+              className="px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 text-slate-400 hover:text-slate-600 cursor-pointer bg-slate-200/60"
+              title="Accessible seulement aux tuteurs"
+            >
+              <Lock className="w-3 h-3 text-slate-400" />
+              <span>Bonus Malus</span>
+            </button>
+          )}
+
           <button
             onClick={() => setActiveTab('history')}
             className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
@@ -430,6 +460,14 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
           </div>
         </div>
       )}
+
+      {/* Bonus / Malus Modal for Guardians */}
+      <BonusMalusModal
+        isOpen={isBonusMalusOpen}
+        onClose={() => setIsBonusMalusOpen(false)}
+        state={state}
+        activeGuardian={activeMember}
+      />
     </div>
   );
 };
