@@ -249,7 +249,7 @@ export function applyLocalAction(
         completedDate: completedDate || new Date().toISOString().split('T')[0],
         completedDateLabel: completedDateLabel || 'Aujourd’hui',
         submittedAt: new Date().toISOString(),
-        note: note ? note.trim() : undefined,
+        note: note ? note.trim() : '',
         status: 'en_attente',
       };
 

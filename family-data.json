@@ -177,6 +177,21 @@
   ],
   "submissions": [
     {
+      "id": "sub-1791390293827-6msv",
+      "taskId": "t-1",
+      "taskTitle": "Mettre la table",
+      "taskCategory": "cuisine",
+      "taskIcon": "🍽️",
+      "points": 10,
+      "submittedBy": "m-3",
+      "submittedByName": "Philéas",
+      "completedDate": "2026-10-07",
+      "completedDateLabel": "Aujourd’hui",
+      "submittedAt": "2026-10-07T16:24:53.827Z",
+      "note": "Table mise",
+      "status": "en_attente"
+    },
+    {
       "id": "sub-bm-1791358520572-iw1g",
       "taskId": "bonus",
       "taskTitle": "Bonus : Test Bonus",
@@ -243,5 +258,5 @@
     }
   ],
   "rewardClaims": [],
-  "lastUpdated": 1791358520572
+  "lastUpdated": 1791390293828
 }

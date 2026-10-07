@@ -329,7 +329,7 @@ async function startServer() {
           completedDate: completedDate || new Date().toISOString().split('T')[0],
           completedDateLabel: completedDateLabel || 'Aujourd’hui',
           submittedAt: new Date().toISOString(),
-          note: note ? String(note).trim() : undefined,
+          note: note ? String(note).trim() : '',
           status: 'en_attente',
         };
 

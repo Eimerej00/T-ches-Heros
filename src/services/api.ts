@@ -65,22 +65,20 @@ class ApiService {
 
           if (snapshot.exists()) {
             const data = snapshot.data() as FamilyState;
-            if (data && data.members && data.tasks) {
-              // Only apply if incoming data is newer or local is uninitialized
-              if (!this.state || (data.lastUpdated && data.lastUpdated >= (this.state.lastUpdated || 0))) {
-                this.state = data;
-                try {
-                  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-                } catch {
-                  // Ignore
-                }
-                this.notify();
+            if (data && Array.isArray(data.members) && Array.isArray(data.tasks)) {
+              this.state = data;
+              try {
+                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+              } catch {
+                // Ignore
               }
+              this.notify();
             }
           } else {
             // First time setup on cloud: initialize Firestore with initial state
             if (this.state) {
-              setDoc(familyRef, this.state).catch((err) => {
+              const sanitized = JSON.parse(JSON.stringify(this.state));
+              setDoc(familyRef, sanitized).catch((err) => {
                 console.warn('Firestore initial setDoc notice:', err);
               });
             }
@@ -213,7 +211,8 @@ class ApiService {
         // 2. Broadcast immediately to Firebase Firestore so all family phones receive update
         try {
           const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
-          setDoc(familyRef, updatedState).catch((cloudErr) => {
+          const sanitized = JSON.parse(JSON.stringify(updatedState));
+          setDoc(familyRef, sanitized).catch((cloudErr) => {
             console.warn('Cloud Firestore sync notice:', cloudErr);
           });
         } catch (e) {
