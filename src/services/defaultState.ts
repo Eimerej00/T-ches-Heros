@@ -230,7 +230,7 @@ export function applyLocalAction(
 
   switch (type) {
     case 'SUBMIT_CHORE': {
-      const { taskId, memberId, completedDate, completedDateLabel, note } = payload;
+      const { taskId, memberId, completedDate, completedDateLabel, note, submissionId } = payload;
       const task = state.tasks.find((t) => t.id === taskId);
       const member = state.members.find((m) => m.id === memberId);
       if (!task || !member) {
@@ -238,7 +238,7 @@ export function applyLocalAction(
       }
 
       const submission: ChoreSubmission = {
-        id: `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
+        id: submissionId || `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`,
         taskId: task.id,
         taskTitle: task.title,
         taskIcon: task.icon,

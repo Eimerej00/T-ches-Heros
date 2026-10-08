@@ -77,7 +77,9 @@ export const SubmitTaskModal: React.FC<SubmitTaskModalProps> = ({
     const { date, label } = getComputedDateAndLabel();
 
     try {
+      const submissionId = `sub-${Date.now()}-${Math.random().toString(36).substring(2, 6)}`;
       const res = await api.dispatchAction('SUBMIT_CHORE', {
+        submissionId,
         taskId: task.id,
         memberId: selectedMemberId,
         completedDate: date,

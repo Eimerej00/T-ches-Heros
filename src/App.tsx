@@ -4,12 +4,11 @@ import {
   ShieldCheck,
   Gift,
   Trophy,
-  Wifi,
   Sparkles,
   Users,
   Plus,
   Clock,
-  WifiOff,
+  CloudOff,
 } from 'lucide-react';
 import type { ChoreTask, FamilyMember, FamilyState } from './types.ts';
 import { api } from './services/api.ts';
@@ -18,7 +17,6 @@ import { TaskList } from './components/TaskList.tsx';
 import { ValidationScreen } from './components/ValidationScreen.tsx';
 import { RewardsShop } from './components/RewardsShop.tsx';
 import { Leaderboard } from './components/Leaderboard.tsx';
-import { WifiSyncModal } from './components/WifiSyncModal.tsx';
 import { FamilyMembersModal } from './components/FamilyMembersModal.tsx';
 import { CreateTaskModal } from './components/CreateTaskModal.tsx';
 import { SubmitTaskModal } from './components/SubmitTaskModal.tsx';
@@ -34,7 +32,6 @@ export default function App() {
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
 
   // Modals state
-  const [isWifiModalOpen, setIsWifiModalOpen] = useState(false);
   const [isMembersModalOpen, setIsMembersModalOpen] = useState(false);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
@@ -119,8 +116,8 @@ export default function App() {
       {/* Offline Toast Notification */}
       {!syncStatus.isOnline && (
         <div className="bg-amber-500 text-white text-xs font-bold py-1.5 px-4 text-center flex items-center justify-center gap-2 shadow-xs">
-          <WifiOff className="w-3.5 h-3.5" />
-          <span>Mode Hors-Ligne — Les missions enregistrées seront synchronisées dès reconnexion au Wi-Fi.</span>
+          <CloudOff className="w-3.5 h-3.5" />
+          <span>Mode Hors-Ligne — Vos missions enregistrées seront synchronisées automatiquement dès le retour de votre connexion.</span>
         </div>
       )}
 
@@ -129,7 +126,6 @@ export default function App() {
         state={state}
         activeMember={activeMember}
         onSelectActiveMember={handleRequestSelectActiveMember}
-        onOpenWifiModal={() => setIsWifiModalOpen(true)}
         onOpenMembersModal={() => setIsMembersModalOpen(true)}
         onOpenSettingsModal={() => setIsSettingsModalOpen(true)}
         isOnline={syncStatus.isOnline}
@@ -163,25 +159,17 @@ export default function App() {
             </div>
           </div>
 
-          {/* Quick Points & Wifi Sync Button */}
+          {/* Quick Points Card */}
           <div className="flex items-center gap-2 self-end sm:self-auto">
-            <div className="px-3 py-1.5 rounded-xl bg-white/10 border border-white/20 flex items-center gap-2">
+            <div className="px-3.5 py-2 rounded-2xl bg-white/10 border border-white/20 flex items-center gap-2 shadow-inner">
               <Sparkles className="w-4 h-4 text-amber-300" />
               <div className="text-left">
-                <div className="text-[10px] text-indigo-200 leading-none">Points dispo</div>
+                <div className="text-[10px] text-indigo-200 leading-none">Points disponibles</div>
                 <div className="text-sm font-black text-amber-300 leading-none mt-0.5">
                   {activeMember?.points || 0} pts
                 </div>
               </div>
             </div>
-
-            <button
-              onClick={() => setIsWifiModalOpen(true)}
-              className="px-3 py-1.5 rounded-xl bg-white/15 hover:bg-white/25 active:scale-95 border border-white/20 text-xs font-bold transition flex items-center gap-1.5"
-            >
-              <Wifi className="w-3.5 h-3.5 text-emerald-300" />
-              <span>Partager Wifi</span>
-            </button>
           </div>
         </div>
 
@@ -342,26 +330,9 @@ export default function App() {
           <Trophy className="w-5 h-5 mb-0.5" />
           <span>Héros</span>
         </button>
-
-        <button
-          onClick={() => {
-            sounds.playPop();
-            setIsWifiModalOpen(true);
-          }}
-          className="flex flex-col items-center py-1 px-2 rounded-xl text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition"
-        >
-          <Wifi className="w-5 h-5 mb-0.5 text-indigo-500" />
-          <span>Wifi QR</span>
-        </button>
       </nav>
 
       {/* Modals */}
-      <WifiSyncModal
-        isOpen={isWifiModalOpen}
-        onClose={() => setIsWifiModalOpen(false)}
-        state={state}
-      />
-
       <FamilyMembersModal
         isOpen={isMembersModalOpen}
         onClose={() => setIsMembersModalOpen(false)}

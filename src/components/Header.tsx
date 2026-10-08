@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Wifi,
   Users,
   Sparkles,
   ChevronDown,
@@ -8,8 +7,8 @@ import {
   Download,
   Settings,
   RefreshCw,
-  QrCode,
   Check,
+  Cloud,
 } from 'lucide-react';
 import type { FamilyMember, FamilyState } from '../types.ts';
 import { PWAInstallButton } from './PWAInstallButton.tsx';
@@ -19,7 +18,6 @@ interface HeaderProps {
   state: FamilyState;
   activeMember: FamilyMember | null;
   onSelectActiveMember: (id: string) => void;
-  onOpenWifiModal: () => void;
   onOpenMembersModal: () => void;
   onOpenSettingsModal: () => void;
   isOnline: boolean;
@@ -31,7 +29,6 @@ export const Header: React.FC<HeaderProps> = ({
   state,
   activeMember,
   onSelectActiveMember,
-  onOpenWifiModal,
   onOpenMembersModal,
   onOpenSettingsModal,
   isOnline,
@@ -60,34 +57,18 @@ export const Header: React.FC<HeaderProps> = ({
               </span>
             </div>
             <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-              <button
-                onClick={onOpenWifiModal}
-                className="hover:text-indigo-600 transition flex items-center gap-1"
-                title="Partager et synchroniser sur les téléphones en Wi-Fi"
-              >
-                <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-                <span className="font-semibold text-slate-600 truncate">{isOnline ? 'Wifi Synchronisé' : 'Hors-ligne'}</span>
-              </button>
+              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
+              <span className="font-semibold text-slate-600 truncate flex items-center gap-1">
+                {isOnline ? 'Synchronisé' : 'Hors-ligne'}
+              </span>
+              {isSyncing && <RefreshCw className="w-3 h-3 text-indigo-500 animate-spin" />}
             </div>
           </div>
         </div>
 
         {/* Right action controls */}
         <div className="flex items-center gap-1.5 sm:gap-2.5">
-          {/* Wifi QR Code button */}
-          <button
-            onClick={() => {
-              sounds.playPop();
-              onOpenWifiModal();
-            }}
-            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/70 text-xs font-bold transition active:scale-95 shadow-2xs"
-            title="Connecter les téléphones de la famille (Code QR)"
-          >
-            <QrCode className="w-4 h-4 text-indigo-600" />
-            <span className="hidden sm:inline">Wifi & QR</span>
-          </button>
-
-          {/* PWA Install Button */}
+          {/* PWA Install / Shortcut Button */}
           <PWAInstallButton />
 
           {/* Active Profile Switcher */}

@@ -286,6 +286,22 @@ export const TaskList: React.FC<TaskListProps> = ({
                       ))}
                     </div>
                   )}
+
+                  {/* Pending validation badge if current player declared it */}
+                  {(() => {
+                    const pendingSubs = state.submissions.filter(
+                      (s) => s.taskId === task.id && s.status === 'en_attente' && (!activeMember || s.submittedBy === activeMember.id)
+                    );
+                    if (pendingSubs.length === 0) return null;
+                    return (
+                      <div className="mb-3 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2 font-medium">
+                        <span className="text-base">⏳</span>
+                        <span>
+                          Déclarée <strong>{pendingSubs[0].completedDateLabel}</strong> — En attente de validation par le tuteur
+                        </span>
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Card Action Buttons */}
@@ -295,7 +311,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                       sounds.playPop();
                       onOpenSubmitTask(task);
                     }}
-                    className="flex-1 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-xs transition flex items-center justify-center gap-1.5"
+                    className="flex-1 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <CheckCircle className="w-4 h-4 text-indigo-200" />
                     <span>J'ai fait cette mission ! ✨</span>

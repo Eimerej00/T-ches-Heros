@@ -4,9 +4,9 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Tâches & Héros - Missions Familiales</title>
-    <meta name="description" content="Application ludique et coopérative de gestion et partage des tâches et missions familiales, avec attribution de points, validation parentale et synchronisation wifi." />
+    <meta name="description" content="Application ludique et coopérative de gestion et partage des tâches et missions familiales, avec attribution de points, validation parentale et synchronisation cloud instantanée." />
     <meta property="og:title" content="Tâches & Héros - Missions Familiales" />
-    <meta property="og:description" content="Application ludique et coopérative de gestion et partage des tâches et missions familiales, avec attribution de points, validation parentale et synchronisation wifi." />
+    <meta property="og:description" content="Application ludique et coopérative de gestion et partage des tâches et missions familiales, avec attribution de points, validation parentale et synchronisation cloud instantanée." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="theme-color" content="#4f46e5" />
@@ -14,8 +14,17 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Tâches&Héros" />
-    <link rel="manifest" href="./manifest.json" />
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png" />
+    <script>
+      /* Ensure trailing slash for subdirectory hosting like GitHub Pages to keep relative paths intact */
+      (function() {
+        var p = window.location.pathname;
+        if (p && !p.endsWith('/') && !p.split('/').pop().includes('.')) {
+          window.history.replaceState(null, '', p + '/' + window.location.search + window.location.hash);
+        }
+      })();
+    </script>
+    <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+    <link rel="icon" type="image/png" sizes="64x64" href="./favicon.png" />
     <link rel="icon" type="image/svg+xml" href="./icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>

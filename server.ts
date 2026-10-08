@@ -310,7 +310,7 @@ async function startServer() {
 
     switch (type) {
       case 'SUBMIT_CHORE': {
-        const { taskId, memberId, completedDate, completedDateLabel, note } = payload;
+        const { taskId, memberId, completedDate, completedDateLabel, note, submissionId } = payload;
         const task = state.tasks.find((t) => t.id === taskId);
         const member = state.members.find((m) => m.id === memberId);
         if (!task || !member) {
@@ -318,7 +318,7 @@ async function startServer() {
         }
 
         const submission: ChoreSubmission = {
-          id: `sub-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+          id: submissionId || `sub-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
           taskId: task.id,
           taskTitle: task.title,
           taskCategory: task.category,
@@ -744,10 +744,7 @@ async function startServer() {
   httpServer.listen(PORT, '0.0.0.0', () => {
     const localIps = getLocalIpAddresses();
     console.log(`✨ Serveur Tâches & Héros démarré sur le port ${PORT}`);
-    console.log(`📱 Accès local: http://localhost:${PORT}`);
-    localIps.forEach((ip) => {
-      console.log(`📡 Accès Wifi / Téléphones: http://${ip}:${PORT}`);
-    });
+    console.log(`📱 Accès: http://localhost:${PORT}`);
   });
 }
 

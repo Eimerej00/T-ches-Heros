@@ -1,6 +1,6 @@
 {
   "name": "Tâches & Héros - Corvées Familiales",
-  "description": "Application ludique et coopérative de gestion et partage des tâches ménagères familiales, avec attribution de points, validation parentale et synchronisation wifi.",
+  "description": "Application ludique et coopérative de gestion et partage des tâches ménagères familiales, avec attribution de points, validation parentale et synchronisation cloud instantanée.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

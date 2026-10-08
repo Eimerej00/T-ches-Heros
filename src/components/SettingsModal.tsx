@@ -134,7 +134,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Code Famille (identifiant Wi-Fi)</label>
+            <label className="block text-xs font-semibold text-slate-700 mb-1">Code Famille (identifiant unique de la tribu)</label>
             <input
               type="text"
               value={familyCode}

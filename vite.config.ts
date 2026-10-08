@@ -10,22 +10,25 @@ export default defineConfig(() => {
     plugins: [
       react(),
       tailwindcss(),
-      VitePWA({
+        VitePWA({
         registerType: 'autoUpdate',
         includeAssets: [
           'apple-touch-icon.png',
+          'favicon.png',
           'icon.svg',
+          'shortcut-icon.png',
+          'shortcut-icon.jpg',
           'pwa-192x192.png',
           'pwa-512x512.png',
           'pwa-maskable-512x512.png',
         ],
         manifest: {
-          id: '/',
-          name: 'Tâches & Héros - Corvées Familiales',
+          id: 'taches-heros-pwa',
+          name: 'Tâches & Héros - Missions Familiales',
           short_name: 'Tâches&Héros',
-          description: 'Application ludique et coopérative de gestion des tâches ménagères familiales avec points et validation parentale.',
-          start_url: '/',
-          scope: '/',
+          description: 'Application ludique et coopérative de gestion et partage des missions familiales avec attribution de points et validation parentale.',
+          start_url: './',
+          scope: './',
           display: 'standalone',
           orientation: 'portrait',
           theme_color: '#4f46e5',
@@ -33,34 +36,74 @@ export default defineConfig(() => {
           categories: ['lifestyle', 'productivity', 'utilities'],
           icons: [
             {
-              src: '/pwa-192x192.png',
+              src: 'shortcut-icon.png',
               sizes: '192x192',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-512x512.png',
+              src: 'pwa-192x192.png',
+              sizes: '192x192',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: 'pwa-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'any',
             },
             {
-              src: '/pwa-maskable-512x512.png',
+              src: 'pwa-maskable-512x512.png',
               sizes: '512x512',
               type: 'image/png',
               purpose: 'maskable',
             },
             {
-              src: '/icon.svg',
+              src: 'apple-touch-icon.png',
+              sizes: '180x180',
+              type: 'image/png',
+              purpose: 'any',
+            },
+            {
+              src: 'icon.svg',
               sizes: '512x512',
               type: 'image/svg+xml',
-              purpose: 'any maskable',
+              purpose: 'any',
+            },
+          ],
+          shortcuts: [
+            {
+              name: 'Tableau des Missions',
+              short_name: 'Missions',
+              description: 'Voir et déclarer les missions accomplies',
+              url: './',
+              icons: [
+                {
+                  src: 'shortcut-icon.png',
+                  sizes: '192x192',
+                  type: 'image/png',
+                },
+              ],
+            },
+            {
+              name: 'Validation Tuteur',
+              short_name: 'Validation',
+              description: 'Valider les missions des enfants et attribuer les points',
+              url: './',
+              icons: [
+                {
+                  src: 'shortcut-icon.png',
+                  sizes: '192x192',
+                  type: 'image/png',
+                },
+              ],
             },
           ],
         },
         workbox: {
           globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
-          navigateFallback: '/index.html',
+          navigateFallback: undefined,
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,

@@ -1,15 +1,10 @@
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
+import { initPWA } from './services/pwaHelper.ts';
 
-// Register Service Worker for PWA capabilities
-if ('serviceWorker' in navigator && typeof window !== 'undefined') {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch((err) => {
-      console.log('SW registration note:', err);
-    });
-  });
-}
+// Initialize PWA dynamic subpath resolution and service worker
+initPWA();
 
 createRoot(document.getElementById('root')!).render(<App />);
 

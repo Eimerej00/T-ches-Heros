@@ -49,6 +49,54 @@ class ApiService {
     this.notify();
   }
 
+  /**
+   * Intelligently reconcile local state with incoming cloud/server state
+   * to guarantee NO mission submission (especially 'en_attente') is ever dropped or lost!
+   */
+  private reconcileWithIncoming(incoming: FamilyState): { state: FamilyState; needsCloudWriteback: boolean } {
+    if (!this.state) {
+      return { state: incoming, needsCloudWriteback: false };
+    }
+
+    const current = this.state;
+    const submissionsMap = new Map<string, any>();
+    let missingInIncoming = false;
+
+    // 1. Add all incoming submissions
+    (incoming.submissions || []).forEach((s) => submissionsMap.set(s.id, s));
+
+    // 2. Preserve any local submissions that incoming didn't have (e.g. just declared)
+    (current.submissions || []).forEach((s) => {
+      if (!submissionsMap.has(s.id)) {
+        submissionsMap.set(s.id, s);
+        missingInIncoming = true;
+      } else {
+        // If current has validated/rejected status while incoming is en_attente, keep the newer status
+        const existing = submissionsMap.get(s.id)!;
+        if (s.status !== 'en_attente' && existing.status === 'en_attente') {
+          submissionsMap.set(s.id, s);
+        }
+      }
+    });
+
+    const mergedSubmissions = Array.from(submissionsMap.values()).sort((a: any, b: any) => {
+      const tA = new Date(a.submittedAt || a.completedDate || 0).getTime();
+      const tB = new Date(b.submittedAt || b.completedDate || 0).getTime();
+      return tB - tA;
+    });
+
+    // Pick whichever state has newer or equal lastUpdated for metadata/members/tasks
+    const base = (incoming.lastUpdated || 0) >= (current.lastUpdated || 0) ? incoming : current;
+
+    const reconciled: FamilyState = {
+      ...base,
+      submissions: mergedSubmissions,
+      lastUpdated: Math.max(incoming.lastUpdated || 0, current.lastUpdated || 0, Date.now()),
+    };
+
+    return { state: reconciled, needsCloudWriteback: missingInIncoming };
+  }
+
   private initFirestoreSync() {
     if (typeof window === 'undefined') return;
 
@@ -66,13 +114,16 @@ class ApiService {
           if (snapshot.exists()) {
             const data = snapshot.data() as FamilyState;
             if (data && Array.isArray(data.members) && Array.isArray(data.tasks)) {
-              this.state = data;
-              try {
-                localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
-              } catch {
-                // Ignore
+              const { state: reconciled, needsCloudWriteback } = this.reconcileWithIncoming(data);
+              this.saveLocalCache(reconciled);
+
+              // If local had submissions that cloud was missing, push merged state back to cloud
+              if (needsCloudWriteback) {
+                const sanitized = JSON.parse(JSON.stringify(reconciled));
+                setDoc(familyRef, sanitized).catch((err) => {
+                  console.warn('Firestore writeback notice:', err);
+                });
               }
-              this.notify();
             }
           } else {
             // First time setup on cloud: initialize Firestore with initial state
@@ -160,31 +211,59 @@ class ApiService {
     this.isSyncing = true;
 
     try {
+      let fetchedState: FamilyState | null = null;
+
       // 1. First try Firestore cloud sync
       try {
         const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
         const snap = await getDoc(familyRef);
         if (snap.exists()) {
           const cloudData = snap.data() as FamilyState;
-          if (cloudData && cloudData.members) {
-            this.syncError = null;
-            this.saveLocalCache(cloudData);
-            return cloudData;
+          if (cloudData && Array.isArray(cloudData.members)) {
+            fetchedState = cloudData;
           }
         }
       } catch {
         // Firestore fetch fallback to local API
       }
 
-      // 2. Try Local Express server if running
-      const res = await fetch('/api/state', {
-        headers: { 'Cache-Control': 'no-cache' },
-      });
-      if (res.ok) {
-        const data: FamilyState = await res.json();
+      // 2. Also check Local Express server if available to merge any offline or Wi-Fi changes
+      try {
+        const res = await fetch('/api/state', {
+          headers: { 'Cache-Control': 'no-cache' },
+        });
+        if (res.ok) {
+          const serverData: FamilyState = await res.json();
+          if (serverData && Array.isArray(serverData.members)) {
+            if (!fetchedState) {
+              fetchedState = serverData;
+            } else {
+              // Merge both cloud and server data
+              const { state: merged } = this.reconcileWithIncoming(serverData);
+              fetchedState = merged;
+            }
+          }
+        }
+      } catch {
+        // Express fetch fallback
+      }
+
+      if (fetchedState) {
+        const { state: reconciled, needsCloudWriteback } = this.reconcileWithIncoming(fetchedState);
         this.syncError = null;
-        this.saveLocalCache(data);
-        return data;
+        this.saveLocalCache(reconciled);
+
+        if (needsCloudWriteback) {
+          try {
+            const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
+            const sanitized = JSON.parse(JSON.stringify(reconciled));
+            await setDoc(familyRef, sanitized);
+          } catch {
+            // Ignore
+          }
+        }
+
+        return reconciled;
       }
     } catch (err: unknown) {
       this.syncError = (err as Error).message || 'Échec de synchronisation';
@@ -208,24 +287,22 @@ class ApiService {
         const updatedState = localResult.state;
         this.saveLocalCache(updatedState);
 
-        // 2. Broadcast immediately to Firebase Firestore so all family phones receive update
+        // 2. Broadcast immediately and reliably to Firebase Firestore so all family devices receive update
         try {
           const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
           const sanitized = JSON.parse(JSON.stringify(updatedState));
-          setDoc(familyRef, sanitized).catch((cloudErr) => {
-            console.warn('Cloud Firestore sync notice:', cloudErr);
-          });
+          await setDoc(familyRef, sanitized);
         } catch (e) {
           console.warn('Firestore dispatch notice:', e);
         }
 
         // 3. Also notify local Express server if available
         try {
-          fetch('/api/action', {
+          await fetch('/api/action', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ type, payload }),
-          }).catch(() => {});
+          });
         } catch {
           // Ignore
         }
@@ -241,30 +318,15 @@ class ApiService {
 
   public async getNetworkInfo(): Promise<{
     primaryUrl: string;
-    wifiUrls: string[];
-    localIps: string[];
-    port: number;
     familyCode: string;
     familyName: string;
   }> {
-    try {
-      const res = await fetch('/api/network-info');
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch {
-      // Fallback
-    }
-
     const host = typeof window !== 'undefined' ? window.location.host : 'localhost:3000';
     const proto = typeof window !== 'undefined' ? window.location.protocol : 'http:';
     const currentFullUrl = typeof window !== 'undefined' ? window.location.href.split('#')[0] : `${proto}//${host}`;
 
     return {
       primaryUrl: currentFullUrl,
-      wifiUrls: [currentFullUrl],
-      localIps: [],
-      port: 3000,
       familyCode: this.state?.settings.familyCode || 'TRIBU-42',
       familyName: this.state?.settings.familyName || 'La Famille',
     };
