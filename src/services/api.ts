@@ -1,6 +1,7 @@
 import type { FamilyState } from '../types.ts';
 import { INITIAL_STATE, applyLocalAction } from './defaultState.ts';
 import { db, doc, onSnapshot, setDoc, getDoc } from './firebase.ts';
+import { authService } from './auth.ts';
 
 const LOCAL_STORAGE_KEY = 'taches_heros_state_v1';
 const ACTIVE_MEMBER_KEY = 'taches_heros_active_member_id';
@@ -14,12 +15,31 @@ class ApiService {
   private pollInterval: number | null = null;
   private syncError: string | null = null;
   private isFirestoreConnected: boolean = false;
+  private firestoreUnsubscribe: (() => void) | null = null;
 
   constructor() {
     this.loadLocalCache();
     this.setupNetworkListeners();
-    this.initFirestoreSync();
+    this.setupAuthSync();
     this.startPolling();
+  }
+
+  private setupAuthSync() {
+    if (typeof window === 'undefined') return;
+
+    authService.subscribe((authState) => {
+      if (authState.isWhitelisted) {
+        if (!this.firestoreUnsubscribe) {
+          this.initFirestoreSync();
+        }
+      } else {
+        if (this.firestoreUnsubscribe) {
+          this.firestoreUnsubscribe();
+          this.firestoreUnsubscribe = null;
+        }
+        this.isFirestoreConnected = false;
+      }
+    });
   }
 
   private loadLocalCache() {
@@ -108,12 +128,13 @@ class ApiService {
 
   private initFirestoreSync() {
     if (typeof window === 'undefined') return;
+    if (!authService.getState().isWhitelisted) return;
 
     try {
       const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
 
       // Listen to real-time changes across all family devices
-      onSnapshot(
+      this.firestoreUnsubscribe = onSnapshot(
         familyRef,
         (snapshot) => {
           this.isFirestoreConnected = true;
@@ -222,18 +243,20 @@ class ApiService {
     try {
       let fetchedState: FamilyState | null = null;
 
-      // 1. First try Firestore cloud sync
-      try {
-        const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
-        const snap = await getDoc(familyRef);
-        if (snap.exists()) {
-          const cloudData = snap.data() as FamilyState;
-          if (cloudData && Array.isArray(cloudData.members)) {
-            fetchedState = cloudData;
+      // 1. First try Firestore cloud sync if user is whitelisted
+      if (authService.getState().isWhitelisted) {
+        try {
+          const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
+          const snap = await getDoc(familyRef);
+          if (snap.exists()) {
+            const cloudData = snap.data() as FamilyState;
+            if (cloudData && Array.isArray(cloudData.members)) {
+              fetchedState = cloudData;
+            }
           }
+        } catch {
+          // Firestore fetch fallback to local API
         }
-      } catch {
-        // Firestore fetch fallback to local API
       }
 
       // 2. Also check Local Express server if available to merge any offline or Wi-Fi changes
@@ -297,12 +320,14 @@ class ApiService {
         this.saveLocalCache(updatedState);
 
         // 2. Broadcast immediately and reliably to Firebase Firestore so all family devices receive update
-        try {
-          const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
-          const sanitized = JSON.parse(JSON.stringify(updatedState));
-          await setDoc(familyRef, sanitized);
-        } catch (e) {
-          console.warn('Firestore dispatch notice:', e);
+        if (authService.getState().isWhitelisted) {
+          try {
+            const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
+            const sanitized = JSON.parse(JSON.stringify(updatedState));
+            await setDoc(familyRef, sanitized);
+          } catch (e) {
+            console.warn('Firestore dispatch notice:', e);
+          }
         }
 
         // 3. Also notify local Express server if available

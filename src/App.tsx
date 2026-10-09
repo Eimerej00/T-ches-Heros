@@ -9,9 +9,12 @@ import {
   Plus,
   Clock,
   CloudOff,
+  RefreshCw,
 } from 'lucide-react';
 import type { ChoreTask, FamilyMember, FamilyState } from './types.ts';
 import { api } from './services/api.ts';
+import { authService, type AuthState } from './services/auth.ts';
+import { AuthScreen } from './components/AuthScreen.tsx';
 import { Header } from './components/Header.tsx';
 import { TaskList } from './components/TaskList.tsx';
 import { ValidationScreen } from './components/ValidationScreen.tsx';
@@ -27,6 +30,7 @@ import { sounds } from './services/audio.ts';
 type NavigationTab = 'corvees' | 'validation' | 'recompenses' | 'classement';
 
 export default function App() {
+  const [authState, setAuthState] = useState<AuthState>(authService.getState());
   const [state, setState] = useState<FamilyState | null>(api.getState());
   const [activeTab, setActiveTab] = useState<NavigationTab>('corvees');
   const [activeMemberId, setActiveMemberId] = useState<string | null>(null);
@@ -43,16 +47,28 @@ export default function App() {
   const [syncStatus, setSyncStatus] = useState(api.getSyncStatus());
 
   useEffect(() => {
+    const unsubAuth = authService.subscribe((newAuthState) => {
+      setAuthState(newAuthState);
+    });
+    return () => unsubAuth();
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = api.subscribe((newState) => {
       setState(newState);
       setSyncStatus(api.getSyncStatus());
 
-      // If active member not set or deleted, default to first available
+      // If active member not set or deleted, default to parent or first available
       const savedId = api.getActiveMemberId();
       if (savedId && newState.members.some((m) => m.id === savedId)) {
         setActiveMemberId(savedId);
       } else if (newState.members.length > 0) {
-        const defaultMember = newState.members.find((m) => m.role === 'joueur') || newState.members[0];
+        // If logged-in user matches a parent, prefer that parent
+        const suggested = authService.getSuggestedMemberName(authService.getState().user?.email);
+        const parentMember = suggested
+          ? newState.members.find((m) => m.name.toLowerCase() === suggested.toLowerCase())
+          : null;
+        const defaultMember = parentMember || newState.members.find((m) => m.role === 'joueur') || newState.members[0];
         setActiveMemberId(defaultMember.id);
         api.setActiveMemberId(defaultMember.id);
       }
@@ -96,6 +112,28 @@ export default function App() {
     setTaskToSubmit(task);
   };
 
+  // 1. Check Auth Loading
+  if (authState.isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-900 text-white">
+        <div className="w-14 h-14 rounded-2xl bg-indigo-600 text-white flex items-center justify-center text-3xl shadow-lg animate-bounce mb-3">
+          ⚡
+        </div>
+        <h1 className="text-xl font-bold">Tâches & Héros</h1>
+        <p className="text-xs text-indigo-200 mt-2 flex items-center gap-2">
+          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+          <span>Vérification de l'accès sécurisé...</span>
+        </p>
+      </div>
+    );
+  }
+
+  // 2. Check Authentication & Whitelist
+  if (!authState.user || !authState.isWhitelisted) {
+    return <AuthScreen authState={authState} />;
+  }
+
+  // 3. Family State loading
   if (!state) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-50 text-slate-700">

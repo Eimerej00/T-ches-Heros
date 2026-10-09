@@ -4,15 +4,18 @@ import {
   Sparkles,
   ChevronDown,
   Shield,
+  ShieldCheck,
   Download,
   Settings,
   RefreshCw,
   Check,
   Cloud,
+  LogOut,
 } from 'lucide-react';
 import type { FamilyMember, FamilyState } from '../types.ts';
 import { PWAInstallButton } from './PWAInstallButton.tsx';
 import { sounds } from '../services/audio.ts';
+import { authService } from '../services/auth.ts';
 
 interface HeaderProps {
   state: FamilyState;
@@ -163,6 +166,31 @@ export const Header: React.FC<HeaderProps> = ({
                       <Settings className="w-4 h-4 text-slate-500" />
                       <span>Réglages & Code PIN tuteur</span>
                     </button>
+
+                    {/* Security & Logout button */}
+                    {authService.getState().user && (
+                      <div className="mt-1 pt-1.5 border-t border-slate-100">
+                        <div className="px-2 py-1 bg-slate-50 rounded-lg mb-1.5 text-left">
+                          <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-700">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            <span>Espace Sécurisé</span>
+                          </div>
+                          <div className="text-[11px] font-mono text-slate-600 truncate">
+                            {authService.getState().user?.email}
+                          </div>
+                        </div>
+                        <button
+                          onClick={async () => {
+                            setProfileDropdownOpen(false);
+                            await authService.logout();
+                          }}
+                          className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
+                        >
+                          <LogOut className="w-4 h-4 text-rose-500" />
+                          <span>Verrouiller / Déconnexion</span>
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </>

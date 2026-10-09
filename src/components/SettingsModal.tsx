@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Settings, Shield, Lock, RotateCcw, X, Check, AlertCircle } from 'lucide-react';
+import { Settings, Shield, ShieldCheck, Lock, RotateCcw, X, Check, AlertCircle, LogOut } from 'lucide-react';
 import type { FamilyState } from '../types.ts';
 import { api } from '../services/api.ts';
 import { sounds } from '../services/audio.ts';
+import { authService, WHITELISTED_EMAILS } from '../services/auth.ts';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -191,7 +192,49 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
           </div>
         </form>
 
-        <div className="mt-6 pt-4 border-t border-slate-100 space-y-2.5">
+        {/* Security & Access Section */}
+        <div className="mt-5 p-3.5 rounded-2xl bg-indigo-50/70 border border-indigo-100 text-left space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-950">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+              <span>Protection & Liste Blanche Famille</span>
+            </div>
+            <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-800 border border-emerald-200">
+              Actif
+            </span>
+          </div>
+          <p className="text-[11px] text-indigo-900/80 leading-snug">
+            Seuls les comptes suivants peuvent accéder à cet espace et gérer les missions :
+          </p>
+          <div className="space-y-1">
+            {WHITELISTED_EMAILS.map((email) => (
+              <div
+                key={email}
+                className="text-[11px] font-mono text-slate-700 bg-white/80 px-2.5 py-1 rounded-lg border border-indigo-100/80 flex items-center justify-between"
+              >
+                <span>{email}</span>
+                {authService.getState().user?.email?.toLowerCase() === email.toLowerCase() && (
+                  <span className="text-[9px] font-bold text-emerald-600">Connecté</span>
+                )}
+              </div>
+            ))}
+          </div>
+          {authService.getState().user && (
+            <button
+              type="button"
+              onClick={async () => {
+                onClose();
+                await authService.logout();
+              }}
+              className="w-full mt-2 py-1.5 px-3 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold flex items-center justify-center gap-1.5 transition"
+            >
+              <LogOut className="w-3.5 h-3.5" />
+              <span>Se déconnecter (Verrouiller l'accès)</span>
+            </button>
+          )}
+        </div>
+
+        <div className="mt-5 pt-4 border-t border-slate-100 space-y-2.5">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-700">Remise à zéro des scores :</span>
             <button
