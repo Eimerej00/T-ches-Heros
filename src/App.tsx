@@ -40,7 +40,11 @@ export default function App() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isCreateTaskOpen, setIsCreateTaskOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<ChoreTask | null>(null);
-  const [taskToSubmit, setTaskToSubmit] = useState<ChoreTask | null>(null);
+  const [taskSubmitConfig, setTaskSubmitConfig] = useState<{
+    task: ChoreTask;
+    initialMemberId?: string;
+    forceCoop?: boolean;
+  } | null>(null);
   const [pendingGuardianMember, setPendingGuardianMember] = useState<FamilyMember | null>(null);
 
   // Sync state
@@ -108,8 +112,8 @@ export default function App() {
     setIsCreateTaskOpen(true);
   };
 
-  const handleOpenSubmitTask = (task: ChoreTask) => {
-    setTaskToSubmit(task);
+  const handleOpenSubmitTask = (task: ChoreTask, initialMemberId?: string, forceCoop?: boolean) => {
+    setTaskSubmitConfig({ task, initialMemberId, forceCoop });
   };
 
   // 1. Check Auth Loading
@@ -392,11 +396,13 @@ export default function App() {
       />
 
       <SubmitTaskModal
-        isOpen={!!taskToSubmit}
-        onClose={() => setTaskToSubmit(null)}
-        task={taskToSubmit}
+        isOpen={!!taskSubmitConfig}
+        onClose={() => setTaskSubmitConfig(null)}
+        task={taskSubmitConfig?.task || null}
         members={state.members}
         activeMemberId={activeMemberId}
+        initialMemberId={taskSubmitConfig?.initialMemberId}
+        initialCoop={taskSubmitConfig?.forceCoop}
       />
 
       <SettingsModal

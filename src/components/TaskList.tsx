@@ -21,7 +21,7 @@ interface TaskListProps {
   state: FamilyState;
   activeMember: FamilyMember | null;
   onOpenCreateTask: (taskToEdit?: ChoreTask) => void;
-  onOpenSubmitTask: (task: ChoreTask) => void;
+  onOpenSubmitTask: (task: ChoreTask, initialMemberId?: string, forceCoop?: boolean) => void;
 }
 
 export const TaskList: React.FC<TaskListProps> = ({
@@ -288,28 +288,31 @@ export const TaskList: React.FC<TaskListProps> = ({
                     </div>
                   )}
 
-                  {/* Pending validation badge if current player declared it or participated */}
+                  {/* Pending validation badge across all family phones */}
                   {(() => {
                     const pendingSubs = state.submissions.filter(
-                      (s) =>
-                        s.taskId === task.id &&
-                        s.status === 'en_attente' &&
-                        (!activeMember ||
-                          s.submittedBy === activeMember.id ||
-                          (s.participantIds && s.participantIds.includes(activeMember.id)))
+                      (s) => s.taskId === task.id && s.status === 'en_attente'
                     );
                     if (pendingSubs.length === 0) return null;
                     const sub = pendingSubs[0];
                     const isCoop = sub.isCoop || (sub.participantIds && sub.participantIds.length > 1);
+                    const isMine =
+                      activeMember &&
+                      (sub.submittedBy === activeMember.id ||
+                        (sub.participantIds && sub.participantIds.includes(activeMember.id)));
+
+                    const performerText = isCoop
+                      ? `En équipe (${sub.participantNames && sub.participantNames.length > 0 ? sub.participantNames.join(' & ') : sub.submittedByName})`
+                      : isMine
+                      ? `Par vous (${activeMember?.name})`
+                      : `Par ${sub.submittedByName}`;
+
                     return (
                       <div className="mb-3 p-2.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-2 font-medium shadow-2xs">
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-base flex-shrink-0">⏳</span>
                           <span className="truncate">
-                            Déclarée <strong>{formatRelativeCompletedDate(sub.completedDate, sub.completedDateLabel, sub.submittedAt)}</strong>
-                            {isCoop && sub.participantNames && sub.participantNames.length > 0 && (
-                              <span> ({sub.participantNames.join(' & ')})</span>
-                            )}
+                            {performerText} • {formatRelativeCompletedDate(sub.completedDate, sub.completedDateLabel, sub.submittedAt)}
                             {' '}— En attente de validation
                           </span>
                         </div>
@@ -329,7 +332,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                   <button
                     onClick={() => {
                       sounds.playPop();
-                      onOpenSubmitTask(task);
+                      onOpenSubmitTask(task, activeMember?.id, false);
                     }}
                     className="flex-1 py-2.5 px-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-95 text-white font-bold text-xs sm:text-sm shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer"
                   >
@@ -337,19 +340,32 @@ export const TaskList: React.FC<TaskListProps> = ({
                     <span>J'ai fait cette mission ! ✨</span>
                   </button>
 
+                  <button
+                    onClick={() => {
+                      sounds.playPop();
+                      onOpenSubmitTask(task, undefined, true);
+                    }}
+                    className="py-2.5 px-3 rounded-2xl bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 border border-indigo-200/80 font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer"
+                    title="Déclarer pour un autre joueur ou en équipe Coop"
+                  >
+                    <Users className="w-3.5 h-3.5 text-indigo-600" />
+                    <span className="hidden xs:inline">Autre / Coop 🤝</span>
+                    <span className="xs:hidden">Autre 👥</span>
+                  </button>
+
                   {/* Guardian Options Menu */}
                   {isGuardian && (
                     <div className="flex items-center gap-1">
                       <button
                         onClick={() => onOpenCreateTask(task)}
-                        className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition"
+                        className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition cursor-pointer"
                         title="Modifier la tâche"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
                       <button
                         onClick={() => handleDeleteTask(task.id, task.title)}
-                        className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition"
+                        className="p-2 text-rose-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition cursor-pointer"
                         title="Supprimer la tâche"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
