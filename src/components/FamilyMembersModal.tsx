@@ -12,8 +12,18 @@ interface FamilyMembersModalProps {
   onSelectActiveMember: (id: string) => void;
 }
 
-const AVATAR_OPTIONS = ['👑', '🛡️', '🦊', '🦄', '🦁', '🐼', '🚀', '⚡', '🧙‍♂️', '🦸‍♀️', '🌸', '🎮', '⚽', '🎨'];
-const COLOR_OPTIONS = ['#4f46e5', '#ec4899', '#3b82f6', '#10b981', '#f97316', '#8b5cf6', '#eab308', '#06b6d4'];
+const AVATAR_OPTIONS = [
+  // Cats & Animals
+  '🐱', '😸', '😻', '😽', '🐈', '🐈‍⬛', '🐶', '🐕', '🦊', '🐺', '🦁', '🐯',
+  '🐼', '🐨', '🐰', '🐹', '🐭', '🐻', '🐸', '🦄', '🐲', '🐥', '🐧', '🦉',
+  // Kawaii & Fun Icons
+  '🌸', '⭐', '🌟', '💫', '🔥', '💧', '🍓', '🍑', '🥑', '🍩', '👑', '🚀',
+  '⚡', '🌈', '💎', '🎨', '🎮', '⚽', '🎸', '🧸', '🎈', '🪄', '🧙‍♂️', '🦸‍♀️'
+];
+const COLOR_OPTIONS = [
+  '#4f46e5', '#ec4899', '#3b82f6', '#10b981', '#f97316', '#8b5cf6', '#eab308', '#06b6d4',
+  '#ef4444', '#14b8a6', '#d946ef', '#84cc16', '#6366f1', '#f43f5e', '#0ea5e9', '#a855f7'
+];
 
 export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
   isOpen,
@@ -317,15 +327,15 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
 
             {/* Avatar Selection */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Avatar</label>
-              <div className="flex flex-wrap gap-2">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Avatar (Chat, Animaux, Kawaii...)</label>
+              <div className="grid grid-cols-8 sm:grid-cols-12 gap-1.5 max-h-36 overflow-y-auto p-1 bg-slate-50 rounded-2xl border border-slate-200">
                 {AVATAR_OPTIONS.map((av) => (
                   <button
                     key={av}
                     type="button"
                     onClick={() => setAvatar(av)}
-                    className={`w-10 h-10 rounded-xl text-xl flex items-center justify-center transition ${
-                      avatar === av ? 'bg-indigo-100 ring-2 ring-indigo-500 scale-110' : 'bg-slate-100 hover:bg-slate-200'
+                    className={`w-9 h-9 rounded-xl text-lg flex items-center justify-center transition cursor-pointer ${
+                      avatar === av ? 'bg-indigo-100 ring-2 ring-indigo-500 scale-110 shadow-xs' : 'bg-white hover:bg-slate-100 border border-slate-200/60'
                     }`}
                   >
                     {av}
@@ -336,19 +346,19 @@ export const FamilyMembersModal: React.FC<FamilyMembersModalProps> = ({
 
             {/* Color Selection */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">Couleur préférée</label>
-              <div className="flex gap-2">
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Couleur préférée (choix multiples)</label>
+              <div className="flex flex-wrap gap-2 p-2 bg-slate-50 rounded-2xl border border-slate-200">
                 {COLOR_OPTIONS.map((c) => (
                   <button
                     key={c}
                     type="button"
                     onClick={() => setColor(c)}
-                    className={`w-7 h-7 rounded-full transition flex items-center justify-center ${
-                      color === c ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110' : ''
+                    className={`w-8 h-8 rounded-full transition flex items-center justify-center cursor-pointer shadow-2xs ${
+                      color === c ? 'ring-2 ring-offset-2 ring-indigo-500 scale-110' : 'hover:scale-105'
                     }`}
                     style={{ backgroundColor: c }}
                   >
-                    {color === c && <Check className="w-3.5 h-3.5 text-white" />}
+                    {color === c && <Check className="w-4 h-4 text-white" />}
                   </button>
                 ))}
               </div>

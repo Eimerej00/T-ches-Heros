@@ -13,7 +13,6 @@ interface SettingsModalProps {
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, state }) => {
   const [familyName, setFamilyName] = useState(state.settings.familyName);
-  const [familyCode, setFamilyCode] = useState(state.settings.familyCode);
   const [guardianPin, setGuardianPin] = useState(state.settings.guardianPin);
   const [requirePin, setRequirePin] = useState(state.settings.requirePinForValidation);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -22,7 +21,6 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
   React.useEffect(() => {
     if (isOpen) {
       setFamilyName(state.settings.familyName);
-      setFamilyCode(state.settings.familyCode);
       setGuardianPin(state.settings.guardianPin);
       setRequirePin(state.settings.requirePinForValidation);
       setMessage(null);
@@ -39,7 +37,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
 
     const res = await api.dispatchAction('UPDATE_SETTINGS', {
       familyName,
-      familyCode,
+      familyCode: state.settings.familyCode,
       guardianPin,
       requirePinForValidation: requirePin,
     });
@@ -134,15 +132,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
             />
           </div>
 
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 mb-1">Code Famille (identifiant unique de la tribu)</label>
-            <input
-              type="text"
-              value={familyCode}
-              onChange={(e) => setFamilyCode(e.target.value.toUpperCase())}
-              className="w-full text-xs sm:text-sm font-mono uppercase px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-indigo-500 outline-hidden"
-            />
-          </div>
+
 
           <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
             <div className="flex items-center justify-between">

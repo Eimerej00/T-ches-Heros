@@ -340,19 +340,6 @@ export const TaskList: React.FC<TaskListProps> = ({
                     <span>J'ai fait cette mission ! ✨</span>
                   </button>
 
-                  <button
-                    onClick={() => {
-                      sounds.playPop();
-                      onOpenSubmitTask(task, undefined, true);
-                    }}
-                    className="py-2.5 px-3 rounded-2xl bg-indigo-50 hover:bg-indigo-100 active:scale-95 text-indigo-700 border border-indigo-200/80 font-bold text-xs shadow-2xs transition flex items-center justify-center gap-1.5 cursor-pointer"
-                    title="Déclarer pour un autre joueur ou en équipe Coop"
-                  >
-                    <Users className="w-3.5 h-3.5 text-indigo-600" />
-                    <span className="hidden xs:inline">Autre / Coop 🤝</span>
-                    <span className="xs:hidden">Autre 👥</span>
-                  </button>
-
                   {/* Guardian Options Menu */}
                   {isGuardian && (
                     <div className="flex items-center gap-1">

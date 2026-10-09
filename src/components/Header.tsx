@@ -59,13 +59,12 @@ export const Header: React.FC<HeaderProps> = ({
                 {state.settings.familyName}
               </span>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-slate-500">
-              <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-500 animate-pulse' : 'bg-amber-500'}`} />
-              <span className="font-semibold text-slate-600 truncate flex items-center gap-1">
-                {isOnline ? 'Synchronisé' : 'Hors-ligne'}
-              </span>
-              {isSyncing && <RefreshCw className="w-3 h-3 text-indigo-500 animate-spin" />}
-            </div>
+            {!isOnline && (
+              <div className="flex items-center gap-1.5 text-[11px] text-amber-600">
+                <span className="w-2 h-2 rounded-full bg-amber-500" />
+                <span className="font-semibold truncate">Hors-ligne</span>
+              </div>
+            )}
           </div>
         </div>
 
