@@ -4,25 +4,35 @@ import {
   ShieldCheck,
   ShieldAlert,
   Lock,
-  Sparkles,
-  LogIn,
+  KeyRound,
   LogOut,
   AlertCircle,
-  Users,
-  CheckCircle2,
+  ExternalLink,
+  Copy,
+  Check,
   RefreshCw,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
-import { authService, WHITELISTED_EMAILS, type AuthState } from '../services/auth.ts';
+import { authService, type AuthState } from '../services/auth.ts';
 
 interface AuthScreenProps {
   authState: AuthState;
+  guardianPin?: string;
 }
 
-export const AuthScreen: React.FC<AuthScreenProps> = ({ authState }) => {
+export const AuthScreen: React.FC<AuthScreenProps> = ({ authState, guardianPin = '1805' }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
+  const [showPinUnlock, setShowPinUnlock] = useState(false);
+  const [copiedDomain, setCopiedDomain] = useState(false);
 
-  const { user, isWhitelisted, isLoading, error } = authState;
+  const { user, isWhitelisted, isLoading, error, errorCode, unauthorizedDomain } = authState;
+
+  const currentDomain =
+    unauthorizedDomain || (typeof window !== 'undefined' ? window.location.hostname : 'eimerej00.github.io');
 
   const handleGoogleSignIn = async () => {
     setIsSubmitting(true);
@@ -31,6 +41,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ authState }) => {
       const res = await authService.loginWithGoogle();
       if (!res.success && res.error) {
         setErrorMessage(res.error);
+        if (res.errorCode === 'auth/unauthorized-domain') {
+          // Open PIN unlock automatically as immediate alternative
+          setShowPinUnlock(true);
+        }
       }
     } finally {
       setIsSubmitting(false);
@@ -40,10 +54,36 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ authState }) => {
   const handleLogout = async () => {
     setIsSubmitting(true);
     setErrorMessage(null);
+    setPinError(null);
     try {
       await authService.logout();
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handlePinSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinError(null);
+    if (!pinInput.trim()) {
+      setPinError('Veuillez saisir votre code PIN.');
+      return;
+    }
+
+    const success = authService.unlockWithPin(pinInput, guardianPin);
+    if (!success) {
+      setPinError('Code PIN incorrect.');
+      setPinInput('');
+    }
+  };
+
+  const handleCopyDomain = async () => {
+    try {
+      await navigator.clipboard.writeText(currentDomain);
+      setCopiedDomain(true);
+      setTimeout(() => setCopiedDomain(false), 2500);
+    } catch {
+      // Ignore
     }
   };
 
@@ -70,7 +110,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ authState }) => {
           </div>
         </div>
 
-        {/* State 1: Logged in but UNAUTHORIZED (not in whitelist) */}
+        {/* State 1: Logged in with Google but UNAUTHORIZED (not in whitelist) */}
         {user && !isWhitelisted && (
           <div className="space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-300">
             <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-left space-y-2.5">
@@ -79,13 +119,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ authState }) => {
                 <span>Accès non autorisé</span>
               </div>
               <p className="text-xs text-rose-100 leading-relaxed">
-                Le compte Google connecté ne fait pas partie des adresses enregistrées sur la liste blanche de la famille :
+                Le compte Google connecté n'a pas accès à cet espace privé familial.
               </p>
-              <div className="p-2.5 rounded-xl bg-slate-900/80 border border-rose-400/20 text-xs font-mono text-rose-200 break-all text-center">
-                {user.email}
-              </div>
               <p className="text-[11px] text-rose-200/80">
-                Seuls les comptes des parents autorisés ont accès aux données et à l'application.
+                Seuls les comptes des parents de la famille peuvent déverrouiller l'application.
               </p>
             </div>
 
@@ -104,14 +141,59 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ authState }) => {
         {!user && (
           <div className="space-y-5 animate-in fade-in duration-300">
             <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
-              Pour protéger la vie privée de votre famille, l’accès aux missions, aux points et aux récompenses est strictement verrouillé.
+              Pour protéger la vie privée de votre famille, l’accès aux missions, aux points et aux récompenses est strictement sécurisé.
             </p>
 
-            {/* Error banner if any */}
-            {(errorMessage || error) && (
+            {/* Diagnostic Card for Firebase unauthorized-domain */}
+            {errorCode === 'auth/unauthorized-domain' && (
+              <div className="p-4 rounded-2xl bg-amber-500/15 border border-amber-500/35 text-left space-y-3 animate-in fade-in zoom-in-95 duration-200">
+                <div className="flex items-center gap-2 text-amber-300 font-bold text-xs sm:text-sm">
+                  <AlertCircle className="w-4 h-4 text-amber-400 flex-shrink-0" />
+                  <span>Domaine à autoriser dans Firebase Console</span>
+                </div>
+
+                <p className="text-xs text-amber-100/90 leading-relaxed">
+                  Firebase exige que l'adresse de votre site web soit enregistrée dans la console pour autoriser la connexion avec Google :
+                </p>
+
+                <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-slate-900/90 border border-amber-400/20 text-xs font-mono text-amber-200">
+                  <span className="truncate">{currentDomain}</span>
+                  <button
+                    type="button"
+                    onClick={handleCopyDomain}
+                    className="px-2.5 py-1 bg-white/10 hover:bg-white/20 active:scale-95 rounded-lg text-[10px] font-sans font-bold text-white flex items-center gap-1 transition cursor-pointer flex-shrink-0"
+                  >
+                    {copiedDomain ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedDomain ? 'Copié !' : 'Copier'}</span>
+                  </button>
+                </div>
+
+                <div className="text-[11px] text-amber-200/90 space-y-1">
+                  <p className="font-bold text-white">Résolution en 30 secondes :</p>
+                  <ol className="list-decimal list-inside space-y-1 text-slate-300 text-[11px]">
+                    <li>Cliquez sur le lien ci-dessous pour ouvrir Firebase</li>
+                    <li>Dans la section <b>Domaines autorisés</b>, cliquez sur <b>Ajouter un domaine</b></li>
+                    <li>Collez <span className="font-mono text-amber-300">{currentDomain}</span> et enregistrez</li>
+                  </ol>
+                </div>
+
+                <a
+                  href="https://console.firebase.google.com/project/temporal-charge-thl8x/authentication/settings"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition cursor-pointer shadow-md"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Ouvrir Firebase Console &gt; Domaines autorisés</span>
+                </a>
+              </div>
+            )}
+
+            {/* General error banner if other error */}
+            {errorMessage && errorCode !== 'auth/unauthorized-domain' && (
               <div className="p-3.5 rounded-2xl bg-rose-500/20 border border-rose-400/30 text-rose-200 text-xs flex items-start gap-2.5 text-left">
                 <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
-                <span className="leading-tight">{errorMessage || error}</span>
+                <span className="leading-tight">{errorMessage}</span>
               </div>
             )}
 
@@ -152,25 +234,74 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ authState }) => {
               )}
             </button>
 
-            {/* Whitelist Transparency Card */}
-            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-left space-y-2">
+            {/* Alternative: PIN Unlock Accordion / Section */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={() => setShowPinUnlock(!showPinUnlock)}
+                className="inline-flex items-center gap-1.5 text-xs text-indigo-200 hover:text-white transition py-1 px-2.5 rounded-lg hover:bg-white/5 cursor-pointer"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-amber-400" />
+                <span>Déverrouiller avec le Code PIN Tuteur</span>
+                {showPinUnlock ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+              </button>
+
+              {showPinUnlock && (
+                <form
+                  onSubmit={handlePinSubmit}
+                  className="mt-3 p-4 rounded-2xl bg-white/5 border border-white/10 text-left space-y-3 animate-in fade-in duration-200"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Code PIN Parent</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400">4 chiffres</span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-300 leading-snug">
+                    Déverrouille immédiatement l'application sur cet appareil pour toute la famille.
+                  </p>
+
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="password"
+                      maxLength={6}
+                      value={pinInput}
+                      onChange={(e) => setPinInput(e.target.value)}
+                      placeholder="••••"
+                      autoFocus
+                      className="flex-1 py-2 px-3 rounded-xl bg-slate-900/90 border border-white/20 text-center font-mono text-base tracking-widest text-white focus:outline-none focus:border-indigo-400"
+                    />
+                    <button
+                      type="submit"
+                      className="py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 active:scale-95 text-white font-bold text-xs transition cursor-pointer shadow-md"
+                    >
+                      Valider
+                    </button>
+                  </div>
+
+                  {pinError && (
+                    <div className="text-[11px] text-rose-300 font-semibold flex items-center gap-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>{pinError}</span>
+                    </div>
+                  )}
+                </form>
+              )}
+            </div>
+
+            {/* Privacy Card — WITHOUT exposing personal email addresses */}
+            <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 text-left space-y-1.5">
               <div className="flex items-center gap-1.5 text-xs font-bold text-indigo-200">
                 <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                <span>Comptes parents autorisés :</span>
+                <span>Espace Privé Familial Sécurisé</span>
               </div>
-              <div className="space-y-1">
-                {WHITELISTED_EMAILS.map((email) => (
-                  <div
-                    key={email}
-                    className="flex items-center gap-2 text-xs font-mono text-slate-300 bg-slate-900/40 px-2.5 py-1.5 rounded-lg border border-white/5"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                    <span className="truncate">{email}</span>
-                  </div>
-                ))}
-              </div>
-              <p className="text-[11px] text-slate-400 leading-snug pt-1">
-                💡 Une fois connecté sur votre téléphone ou tablette, toute la famille (joueurs & enfants) peut utiliser l'application sans mot de passe supplémentaire.
+              <p className="text-xs text-slate-300 leading-relaxed">
+                L’accès est réservé aux parents de la famille autorisés.
+              </p>
+              <p className="text-[11px] text-slate-400 leading-snug">
+                💡 Une fois déverrouillé sur votre téléphone ou tablette, toute la famille (Philéas, Giliane...) peut utiliser l’application librement.
               </p>
             </div>
           </div>
@@ -179,7 +310,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ authState }) => {
         {/* Footer info */}
         <div className="pt-2 border-t border-white/10 flex items-center justify-center gap-2 text-[11px] text-slate-400">
           <Shield className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Synchronisation Firestore sécurisée & règles chiffrées</span>
+          <span>Synchronisation et règles de sécurité protégées</span>
         </div>
       </div>
     </div>

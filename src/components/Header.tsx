@@ -168,7 +168,7 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
 
                     {/* Security & Logout button */}
-                    {authService.getState().user && (
+                    {(authService.getState().user || authService.getState().isPinUnlocked) && (
                       <div className="mt-1 pt-1.5 border-t border-slate-100">
                         <div className="px-2 py-1 bg-slate-50 rounded-lg mb-1.5 text-left">
                           <div className="flex items-center gap-1 text-[10px] font-bold text-emerald-700">
@@ -176,7 +176,7 @@ export const Header: React.FC<HeaderProps> = ({
                             <span>Espace Sécurisé</span>
                           </div>
                           <div className="text-[11px] font-mono text-slate-600 truncate">
-                            {authService.getState().user?.email}
+                            {authService.getState().user?.email || 'Session déverrouillée (PIN)'}
                           </div>
                         </div>
                         <button
@@ -184,7 +184,7 @@ export const Header: React.FC<HeaderProps> = ({
                             setProfileDropdownOpen(false);
                             await authService.logout();
                           }}
-                          className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition"
+                          className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-semibold text-rose-600 hover:bg-rose-50 transition cursor-pointer"
                         >
                           <LogOut className="w-4 h-4 text-rose-500" />
                           <span>Verrouiller / Déconnexion</span>

@@ -128,9 +128,10 @@ export default function App() {
     );
   }
 
-  // 2. Check Authentication & Whitelist
-  if (!authState.user || !authState.isWhitelisted) {
-    return <AuthScreen authState={authState} />;
+  // 2. Check Authentication & Whitelist (or PIN unlock)
+  const isAuthorized = (authState.user && authState.isWhitelisted) || authState.isPinUnlocked;
+  if (!isAuthorized) {
+    return <AuthScreen authState={authState} guardianPin={state?.settings?.guardianPin || '1805'} />;
   }
 
   // 3. Family State loading

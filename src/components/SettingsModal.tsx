@@ -204,34 +204,30 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, s
             </span>
           </div>
           <p className="text-[11px] text-indigo-900/80 leading-snug">
-            Seuls les comptes suivants peuvent accéder à cet espace et gérer les missions :
+            Accès sécurisé réservé aux parents de la famille autorisés.
           </p>
-          <div className="space-y-1">
-            {WHITELISTED_EMAILS.map((email) => (
-              <div
-                key={email}
-                className="text-[11px] font-mono text-slate-700 bg-white/80 px-2.5 py-1 rounded-lg border border-indigo-100/80 flex items-center justify-between"
-              >
-                <span>{email}</span>
-                {authService.getState().user?.email?.toLowerCase() === email.toLowerCase() && (
-                  <span className="text-[9px] font-bold text-emerald-600">Connecté</span>
-                )}
-              </div>
-            ))}
-          </div>
-          {authService.getState().user && (
-            <button
-              type="button"
-              onClick={async () => {
-                onClose();
-                await authService.logout();
-              }}
-              className="w-full mt-2 py-1.5 px-3 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold flex items-center justify-center gap-1.5 transition"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Se déconnecter (Verrouiller l'accès)</span>
-            </button>
-          )}
+          {authService.getState().user ? (
+            <div className="text-[11px] font-mono text-slate-700 bg-white/80 p-2 rounded-lg border border-indigo-100/80 flex items-center justify-between">
+              <span className="truncate">{authService.getState().user?.email}</span>
+              <span className="text-[9px] font-bold text-emerald-600 ml-2 flex-shrink-0">Connecté</span>
+            </div>
+          ) : authService.getState().isPinUnlocked ? (
+            <div className="text-[11px] text-slate-700 bg-white/80 p-2 rounded-lg border border-indigo-100/80 flex items-center justify-between">
+              <span>Déverrouillé via Code PIN Parent</span>
+              <span className="text-[9px] font-bold text-amber-600 ml-2 flex-shrink-0">Session locale</span>
+            </div>
+          ) : null}
+          <button
+            type="button"
+            onClick={async () => {
+              onClose();
+              await authService.logout();
+            }}
+            className="w-full mt-2 py-1.5 px-3 rounded-xl bg-white hover:bg-rose-50 text-rose-600 border border-rose-200 text-xs font-bold flex items-center justify-center gap-1.5 transition cursor-pointer"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Verrouiller l'accès sur cet appareil</span>
+          </button>
         </div>
 
         <div className="mt-5 pt-4 border-t border-slate-100 space-y-2.5">
