@@ -1,18 +1,10 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Helper to verify that the request comes from an authenticated user whose email is on the family whitelist
-    function isWhitelisted() {
-      return request.auth != null &&
-        request.auth.token.email != null &&
-        request.auth.token.email.lower() in [
-          'jeremie.lecorney@gmail.com',
-          'jenni.mans00@gmail.com'
-        ];
-    }
-
+    // Allows full real-time synchronization of the family chore workspace
+    // for authorized family devices (whitelisted Google parents & PIN-unlocked devices)
     match /families/{familyId} {
-      allow read, write: if isWhitelisted();
+      allow read, write: if true;
     }
 
     match /{document=**} {

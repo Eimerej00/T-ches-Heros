@@ -15,8 +15,83 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Tâches&Héros" />
     <script>
-      /* Ensure trailing slash for subdirectory hosting like GitHub Pages to keep relative paths intact */
+      /* Filter out Vite dev server HMR WebSocket connection errors in sandbox iframe */
       (function() {
+        if (typeof window !== 'undefined') {
+          var OrigWebSocket = window.WebSocket;
+          if (OrigWebSocket) {
+            window.WebSocket = function(url, protocols) {
+              if (protocols === 'vite-hmr' || (typeof url === 'string' && (url.indexOf('token=') !== -1 || url.indexOf('@vite/client') !== -1))) {
+                var listeners = {};
+                var mockWs = {
+                  readyState: 1,
+                  OPEN: 1,
+                  CONNECTING: 0,
+                  CLOSING: 2,
+                  CLOSED: 3,
+                  send: function() {},
+                  close: function() {},
+                  addEventListener: function(event, handler) {
+                    if (!listeners[event]) listeners[event] = [];
+                    listeners[event].push(handler);
+                    if (event === 'open') {
+                      setTimeout(function() { handler({ type: 'open' }); }, 0);
+                    }
+                  },
+                  removeEventListener: function(event, handler) {
+                    if (listeners[event]) {
+                      listeners[event] = listeners[event].filter(function(h) { return h !== handler; });
+                    }
+                  },
+                  dispatchEvent: function() { return true; },
+                  onopen: null,
+                  onclose: null,
+                  onerror: null,
+                  onmessage: null
+                };
+                setTimeout(function() {
+                  if (typeof mockWs.onopen === 'function') mockWs.onopen({ type: 'open' });
+                }, 0);
+                return mockWs;
+              }
+              return new OrigWebSocket(url, protocols);
+            };
+            window.WebSocket.prototype = OrigWebSocket.prototype;
+            window.WebSocket.CONNECTING = OrigWebSocket.CONNECTING;
+            window.WebSocket.OPEN = OrigWebSocket.OPEN;
+            window.WebSocket.CLOSING = OrigWebSocket.CLOSING;
+            window.WebSocket.CLOSED = OrigWebSocket.CLOSED;
+          }
+
+          window.addEventListener('error', function(event) {
+            if (
+              event &&
+              (
+                (event.message && typeof event.message === 'string' && event.message.indexOf('WebSocket closed without opened') !== -1) ||
+                (event.error && event.error.message && typeof event.error.message === 'string' && event.error.message.indexOf('WebSocket closed without opened') !== -1) ||
+                (typeof event.filename === 'string' && event.filename.indexOf('@vite/client') !== -1)
+              )
+            ) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+              return true;
+            }
+          }, true);
+
+          window.addEventListener('unhandledrejection', function(event) {
+            if (
+              event &&
+              event.reason &&
+              typeof event.reason.message === 'string' &&
+              event.reason.message.indexOf('WebSocket closed without opened') !== -1
+            ) {
+              event.preventDefault();
+              event.stopImmediatePropagation();
+            }
+          }, true);
+        }
+
+        /* Ensure trailing slash for subdirectory hosting like GitHub Pages to keep relative paths intact */
         var p = window.location.pathname;
         if (p && !p.endsWith('/') && !p.split('/').pop().includes('.')) {
           window.location.replace(window.location.protocol + '//' + window.location.host + p + '/' + window.location.search + window.location.hash);

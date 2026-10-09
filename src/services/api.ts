@@ -1,5 +1,5 @@
-import type { FamilyState } from '../types.ts';
-import { INITIAL_STATE, applyLocalAction } from './defaultState.ts';
+import type { FamilyState, FamilyMember, ChoreSubmission, ChoreTask, RewardClaim } from '../types.ts';
+import { INITIAL_STATE, applyLocalAction, calculateLevel } from './defaultState.ts';
 import { db, doc, onSnapshot, setDoc, getDoc } from './firebase.ts';
 import { authService } from './auth.ts';
 
@@ -24,11 +24,17 @@ class ApiService {
     this.startPolling();
   }
 
+  private isAuthorizedSession(): boolean {
+    const authState = authService.getState();
+    return Boolean(authState.isWhitelisted || authState.isPinUnlocked);
+  }
+
   private setupAuthSync() {
     if (typeof window === 'undefined') return;
 
     authService.subscribe((authState) => {
-      if (authState.isWhitelisted) {
+      const authorized = authState.isWhitelisted || authState.isPinUnlocked;
+      if (authorized) {
         if (!this.firestoreUnsubscribe) {
           this.initFirestoreSync();
         }
@@ -71,7 +77,8 @@ class ApiService {
 
   /**
    * Intelligently reconcile local state with incoming cloud/server state
-   * to guarantee NO mission submission (especially 'en_attente') is ever dropped or lost!
+   * to guarantee NO mission submission (especially 'en_attente') is ever dropped or lost,
+   * and guarantees player cumulative points and spendable balances match on ALL family devices!
    */
   private reconcileWithIncoming(incoming: FamilyState): { state: FamilyState; needsCloudWriteback: boolean } {
     if (!this.state) {
@@ -79,37 +86,127 @@ class ApiService {
     }
 
     const current = this.state;
-    const submissionsMap = new Map<string, any>();
+    const submissionsMap = new Map<string, ChoreSubmission>();
     let missingInIncoming = false;
 
     // 1. Add all incoming submissions
     (incoming.submissions || []).forEach((s) => submissionsMap.set(s.id, s));
 
-    // 2. Preserve any local submissions that incoming didn't have (e.g. just declared)
+    // 2. Preserve any local submissions that incoming didn't have (e.g. submitted on this device)
     (current.submissions || []).forEach((s) => {
       if (!submissionsMap.has(s.id)) {
         submissionsMap.set(s.id, s);
         missingInIncoming = true;
       } else {
-        // If current has validated/rejected status while incoming is en_attente, keep the newer status
+        // If current has validated/rejected status while incoming is still en_attente, keep the newer status
         const existing = submissionsMap.get(s.id)!;
         if (s.status !== 'en_attente' && existing.status === 'en_attente') {
           submissionsMap.set(s.id, s);
+          missingInIncoming = true;
         }
       }
     });
 
-    const mergedSubmissions = Array.from(submissionsMap.values()).sort((a: any, b: any) => {
+    const mergedSubmissions = Array.from(submissionsMap.values()).sort((a, b) => {
       const tA = new Date(a.submittedAt || a.completedDate || 0).getTime();
       const tB = new Date(b.submittedAt || b.completedDate || 0).getTime();
       return tB - tA;
     });
 
-    // Pick whichever state has newer or equal lastUpdated for metadata/members/tasks
-    const base = (incoming.lastUpdated || 0) >= (current.lastUpdated || 0) ? incoming : current;
+    // Merge reward claims
+    const claimsMap = new Map<string, RewardClaim>();
+    (incoming.rewardClaims || []).forEach((c) => claimsMap.set(c.id, c));
+    (current.rewardClaims || []).forEach((c) => {
+      if (!claimsMap.has(c.id)) {
+        claimsMap.set(c.id, c);
+        missingInIncoming = true;
+      }
+    });
+    const mergedClaims = Array.from(claimsMap.values()).sort((a, b) => {
+      const tA = new Date(a.claimedAt || 0).getTime();
+      const tB = new Date(b.claimedAt || 0).getTime();
+      return tB - tA;
+    });
 
-    // Ensure default system rewards (such as rew-coop) are present in the list
-    const mergedRewards = [...(base.rewards || [])];
+    // Merge tasks (keep all tasks created or modified)
+    const tasksMap = new Map<string, ChoreTask>();
+    (incoming.tasks || []).forEach((t) => tasksMap.set(t.id, t));
+    (current.tasks || []).forEach((t) => {
+      if (!tasksMap.has(t.id)) {
+        tasksMap.set(t.id, t);
+        missingInIncoming = true;
+      }
+    });
+    const mergedTasks = Array.from(tasksMap.values());
+
+    // Merge members list
+    const membersMap = new Map<string, FamilyMember>();
+    (incoming.members || []).forEach((m) => membersMap.set(m.id, { ...m }));
+    (current.members || []).forEach((m) => {
+      if (!membersMap.has(m.id)) {
+        membersMap.set(m.id, { ...m });
+        missingInIncoming = true;
+      }
+    });
+
+    // Ensure all canonical members exist (Maman, Papa, Philéas, Giliane)
+    INITIAL_STATE.members.forEach((initM) => {
+      if (!membersMap.has(initM.id)) {
+        membersMap.set(initM.id, { ...initM });
+        missingInIncoming = true;
+      }
+    });
+
+    // Synchronize member points deterministically across ALL devices:
+    // Every member's points and totalEarnedPoints are calculated based on the merged submissions and claims,
+    // guaranteeing that ALL family phones display the EXACT same scores for every player!
+    const mergedMembers = Array.from(membersMap.values()).map((m) => {
+      let earned = 0;
+      let spendable = 0;
+
+      mergedSubmissions
+        .filter((s) => s.status === 'validee')
+        .forEach((s) => {
+          const isParticipant =
+            (s.participantIds && s.participantIds.includes(m.id)) ||
+            s.submittedBy === m.id;
+          if (!isParticipant) return;
+
+          const count = s.participantIds && s.participantIds.length > 0 ? s.participantIds.length : 1;
+          const pts = s.pointsPerParticipant || (s.isCoop ? Math.ceil(s.points / count) : s.points);
+
+          if (pts > 0) {
+            earned += pts;
+            spendable += pts;
+          } else {
+            // Malus (points is negative)
+            spendable += pts;
+          }
+        });
+
+      // Deduct spent reward claims
+      mergedClaims.forEach((c) => {
+        if (c.claimedBy === m.id && c.cost) {
+          spendable -= c.cost;
+        }
+      });
+
+      // Ensure points do not go negative and honor any higher baseline score
+      const finalTotalEarned = Math.max(m.totalEarnedPoints || 0, earned);
+      const finalSpendable = Math.max(0, Math.max(m.points || 0, spendable));
+      const { level, title } = calculateLevel(finalTotalEarned);
+
+      return {
+        ...m,
+        points: finalSpendable,
+        totalEarnedPoints: finalTotalEarned,
+        level,
+        title,
+      };
+    });
+
+    // Merge rewards catalog
+    const mergedRewards = [...(incoming.rewards || current.rewards || [])];
     INITIAL_STATE.rewards.forEach((r) => {
       if (!mergedRewards.some((existing) => existing.id === r.id)) {
         mergedRewards.push(r);
@@ -117,9 +214,12 @@ class ApiService {
     });
 
     const reconciled: FamilyState = {
-      ...base,
-      rewards: mergedRewards,
+      settings: (incoming.lastUpdated || 0) >= (current.lastUpdated || 0) ? incoming.settings : current.settings,
+      members: mergedMembers,
+      tasks: mergedTasks,
       submissions: mergedSubmissions,
+      rewards: mergedRewards,
+      rewardClaims: mergedClaims,
       lastUpdated: Math.max(incoming.lastUpdated || 0, current.lastUpdated || 0, Date.now()),
     };
 
@@ -128,7 +228,7 @@ class ApiService {
 
   private initFirestoreSync() {
     if (typeof window === 'undefined') return;
-    if (!authService.getState().isWhitelisted) return;
+    if (!this.isAuthorizedSession()) return;
 
     try {
       const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
@@ -147,7 +247,7 @@ class ApiService {
               const { state: reconciled, needsCloudWriteback } = this.reconcileWithIncoming(data);
               this.saveLocalCache(reconciled);
 
-              // If local had submissions that cloud was missing, push merged state back to cloud
+              // If local had submissions that cloud was missing, push merged state back to cloud immediately
               if (needsCloudWriteback) {
                 const sanitized = JSON.parse(JSON.stringify(reconciled));
                 setDoc(familyRef, sanitized).catch((err) => {
@@ -243,8 +343,8 @@ class ApiService {
     try {
       let fetchedState: FamilyState | null = null;
 
-      // 1. First try Firestore cloud sync if user is whitelisted
-      if (authService.getState().isWhitelisted) {
+      // 1. First try Firestore cloud sync if user is authorized (Google whitelist or PIN)
+      if (this.isAuthorizedSession()) {
         try {
           const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
           const snap = await getDoc(familyRef);
@@ -254,8 +354,8 @@ class ApiService {
               fetchedState = cloudData;
             }
           }
-        } catch {
-          // Firestore fetch fallback to local API
+        } catch (e) {
+          console.warn('Firestore fetch notice:', e);
         }
       }
 
@@ -285,7 +385,7 @@ class ApiService {
         this.syncError = null;
         this.saveLocalCache(reconciled);
 
-        if (needsCloudWriteback) {
+        if (needsCloudWriteback && this.isAuthorizedSession()) {
           try {
             const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
             const sanitized = JSON.parse(JSON.stringify(reconciled));
@@ -316,11 +416,12 @@ class ApiService {
           return { success: false, error: localResult.error || 'Action impossible' };
         }
 
-        const updatedState = localResult.state;
+        // Reconcile and recalculate exact member scores
+        const { state: updatedState } = this.reconcileWithIncoming(localResult.state);
         this.saveLocalCache(updatedState);
 
         // 2. Broadcast immediately and reliably to Firebase Firestore so all family devices receive update
-        if (authService.getState().isWhitelisted) {
+        if (this.isAuthorizedSession()) {
           try {
             const familyRef = doc(db, 'families', FIRESTORE_FAMILY_DOC);
             const sanitized = JSON.parse(JSON.stringify(updatedState));
