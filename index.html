@@ -19,7 +19,7 @@
       (function() {
         var p = window.location.pathname;
         if (p && !p.endsWith('/') && !p.split('/').pop().includes('.')) {
-          window.history.replaceState(null, '', p + '/' + window.location.search + window.location.hash);
+          window.location.replace(window.location.protocol + '//' + window.location.host + p + '/' + window.location.search + window.location.hash);
         }
       })();
     </script>

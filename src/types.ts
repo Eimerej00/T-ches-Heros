@@ -41,7 +41,11 @@ export interface ChoreSubmission {
   taskCategory: TaskCategory;
   taskIcon: string;
   points: number;
-  submittedBy: string; // Member ID who performed the task
+  isCoop?: boolean;
+  participantIds?: string[];
+  participantNames?: string[];
+  pointsPerParticipant?: number;
+  submittedBy: string; // Primary submitter ID who performed the task
   submittedByName: string;
   completedDate: string; // YYYY-MM-DD
   completedDateLabel: string; // e.g. "Aujourd'hui", "Hier", "Lundi 5 oct."

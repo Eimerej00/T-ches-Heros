@@ -22,36 +22,54 @@ export function initPWA(): void {
   if (typeof window === 'undefined') return;
 
   const base = getAppBasePath();
+  const origin = window.location.origin;
 
-  // 1. Ensure touch icons and icons in document head have exact resolved URLs
-  const appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement | null;
-  if (appleTouchIcon) {
-    appleTouchIcon.href = `${base}apple-touch-icon.png`;
+  // 1. Ensure touch icons and icons in document head have exact resolved absolute URLs
+  let appleTouchIcon = document.querySelector('link[rel="apple-touch-icon"]') as HTMLLinkElement | null;
+  if (!appleTouchIcon) {
+    appleTouchIcon = document.createElement('link');
+    appleTouchIcon.rel = 'apple-touch-icon';
+    document.head.appendChild(appleTouchIcon);
+  }
+  appleTouchIcon.href = `${origin}${base}apple-touch-icon.png`;
+
+  // 2. Ensure manifest link is present and points to the dynamic subpath
+  let manifestLink = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
+  if (!manifestLink) {
+    manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = `${base}manifest.webmanifest`;
+    document.head.appendChild(manifestLink);
   }
 
-  // 2. Register service worker adapting to dynamic subpath
+  // 3. Register service worker adapting to dynamic subpath immediately or on load
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
+    const registerSW = () => {
       const swUrl = `${base}sw.js`;
       navigator.serviceWorker
         .register(swUrl, { scope: base })
         .then((reg) => {
-          // If a new service worker is waiting, activate immediately
           reg.onupdatefound = () => {
             const installing = reg.installing;
             if (installing) {
               installing.onstatechange = () => {
                 if (installing.state === 'installed' && navigator.serviceWorker.controller) {
-                  // New content available
+                  // Service worker updated
                 }
               };
             }
           };
         })
-        .catch((err) => {
+        .catch(() => {
           // Fallback to relative registration if scope restriction occurs
-          navigator.serviceWorker.register('./sw.js').catch(() => {});
+          navigator.serviceWorker.register('./sw.js', { scope: './' }).catch(() => {});
         });
-    });
+    };
+
+    if (document.readyState === 'complete') {
+      registerSW();
+    } else {
+      window.addEventListener('load', registerSW);
+    }
   }
 }

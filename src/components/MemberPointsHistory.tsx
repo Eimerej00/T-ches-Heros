@@ -9,6 +9,7 @@ import {
   MessageSquare,
   ShieldCheck,
   TrendingUp,
+  Users,
 } from 'lucide-react';
 import type { FamilyMember, FamilyState, ChoreSubmission } from '../types.ts';
 
@@ -22,16 +23,32 @@ export const MemberPointsHistory: React.FC<MemberPointsHistoryProps> = ({ state,
 
   if (!activeMember) return null;
 
-  // Filter validated submissions for the active member
+  const getMemberPoints = (s: ChoreSubmission): number => {
+    const isCoop = !!s.isCoop || (Array.isArray(s.participantIds) && s.participantIds.length > 1);
+    if (isCoop) {
+      if (s.pointsPerParticipant) return s.pointsPerParticipant;
+      const count = s.participantIds && s.participantIds.length > 0 ? s.participantIds.length : 1;
+      return Math.ceil(s.points / count);
+    }
+    return s.points || 0;
+  };
+
+  // Filter validated submissions where the active member participated
   const validatedSubmissions = state.submissions
-    .filter((s) => s.submittedBy === activeMember.id && s.status === 'validee')
+    .filter((s) => {
+      if (s.status !== 'validee') return false;
+      if (s.participantIds && s.participantIds.length > 0) {
+        return s.participantIds.includes(activeMember.id);
+      }
+      return s.submittedBy === activeMember.id;
+    })
     .sort((a, b) => {
       const timeA = new Date(a.validatedAt || a.submittedAt || a.completedDate).getTime();
       const timeB = new Date(b.validatedAt || b.submittedAt || b.completedDate).getTime();
       return timeB - timeA;
     });
 
-  const totalPointsGained = validatedSubmissions.reduce((sum, s) => sum + (s.points || 0), 0);
+  const totalPointsGained = validatedSubmissions.reduce((sum, s) => sum + getMemberPoints(s), 0);
   const displayedSubmissions = showAll ? validatedSubmissions : validatedSubmissions.slice(0, 5);
 
   const formatValidationDate = (isoString?: string) => {
@@ -107,67 +124,88 @@ export const MemberPointsHistory: React.FC<MemberPointsHistoryProps> = ({ state,
         </div>
       ) : (
         <div className="space-y-2.5">
-          {displayedSubmissions.map((sub) => (
-            <div
-              key={sub.id}
-              className="p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 hover:bg-slate-50 border border-slate-200/90 hover:border-indigo-200 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group"
-            >
-              {/* Left: Icon & Details */}
-              <div className="flex items-start sm:items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xl shadow-2xs flex-shrink-0 group-hover:scale-105 transition-transform">
-                  {sub.taskIcon}
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <span className="font-extrabold text-slate-900 text-sm">{sub.taskTitle}</span>
-                    <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-slate-500">
-                      {sub.taskCategory}
-                    </span>
+          {displayedSubmissions.map((sub) => {
+            const memberPoints = getMemberPoints(sub);
+            const isCoop = !!sub.isCoop || (Array.isArray(sub.participantIds) && sub.participantIds.length > 1);
+            return (
+              <div
+                key={sub.id}
+                className={`p-3.5 sm:p-4 rounded-2xl bg-slate-50/80 hover:bg-slate-50 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3 group ${
+                  isCoop ? 'border-purple-200 hover:border-purple-300' : 'border-slate-200/90 hover:border-indigo-200'
+                }`}
+              >
+                {/* Left: Icon & Details */}
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-white border border-slate-200 flex items-center justify-center text-xl shadow-2xs flex-shrink-0 group-hover:scale-105 transition-transform">
+                    {sub.taskIcon}
                   </div>
-
-                  <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 flex-wrap">
-                    <span className="flex items-center gap-1 font-medium text-slate-700">
-                      <Calendar className="w-3 h-3 text-indigo-500" />
-                      <span>Fait : {sub.completedDateLabel}</span>
-                    </span>
-
-                    {sub.validatedByName && (
-                      <>
-                        <span>•</span>
-                        <span className="flex items-center gap-1 text-slate-500">
-                          <ShieldCheck className="w-3 h-3 text-emerald-600" />
-                          <span>Validé par {sub.validatedByName}</span>
-                          {sub.validatedAt && (
-                            <span className="text-slate-400">({formatValidationDate(sub.validatedAt)})</span>
-                          )}
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-extrabold text-slate-900 text-sm">{sub.taskTitle}</span>
+                      <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded-md bg-white border border-slate-200 text-slate-500">
+                        {sub.taskCategory}
+                      </span>
+                      {isCoop && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xs">
+                          <Users className="w-2.5 h-2.5" />
+                          Coop
                         </span>
-                      </>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 text-xs text-slate-500 mt-1 flex-wrap">
+                      {isCoop && sub.participantNames && sub.participantNames.length > 0 && (
+                        <>
+                          <span className="font-semibold text-purple-700">
+                            En équipe avec {sub.participantNames.filter((n) => n !== activeMember.name).join(' & ') || 'l’équipe'}
+                          </span>
+                          <span>•</span>
+                        </>
+                      )}
+
+                      <span className="flex items-center gap-1 font-medium text-slate-700">
+                        <Calendar className="w-3 h-3 text-indigo-500" />
+                        <span>Fait : {sub.completedDateLabel}</span>
+                      </span>
+
+                      {sub.validatedByName && (
+                        <>
+                          <span>•</span>
+                          <span className="flex items-center gap-1 text-slate-500">
+                            <ShieldCheck className="w-3 h-3 text-emerald-600" />
+                            <span>Validé par {sub.validatedByName}</span>
+                            {sub.validatedAt && (
+                              <span className="text-slate-400">({formatValidationDate(sub.validatedAt)})</span>
+                            )}
+                          </span>
+                        </>
+                      )}
+                    </div>
+
+                    {/* Child's note if any */}
+                    {sub.note && (
+                      <div className="mt-1.5 text-[11px] text-slate-600 italic flex items-center gap-1">
+                        <MessageSquare className="w-3 h-3 text-slate-400 flex-shrink-0" />
+                        <span>« {sub.note} »</span>
+                      </div>
                     )}
                   </div>
+                </div>
 
-                  {/* Child's note if any */}
-                  {sub.note && (
-                    <div className="mt-1.5 text-[11px] text-slate-600 italic flex items-center gap-1">
-                      <MessageSquare className="w-3 h-3 text-slate-400 flex-shrink-0" />
-                      <span>« {sub.note} »</span>
-                    </div>
-                  )}
+                {/* Right: Points Pill */}
+                <div className="flex items-center justify-end sm:justify-center">
+                  <span
+                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-white font-black text-xs sm:text-sm shadow-xs ${
+                      memberPoints >= 0 ? 'bg-emerald-500' : 'bg-rose-500'
+                    }`}
+                  >
+                    <CheckCircle2 className="w-3.5 h-3.5 text-white/80" />
+                    {memberPoints > 0 ? `+${memberPoints}` : memberPoints} pts
+                  </span>
                 </div>
               </div>
-
-              {/* Right: Points Pill */}
-              <div className="flex items-center justify-end sm:justify-center">
-                <span
-                  className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-white font-black text-xs sm:text-sm shadow-xs ${
-                    sub.points >= 0 ? 'bg-emerald-500' : 'bg-rose-500'
-                  }`}
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5 text-white/80" />
-                  {sub.points > 0 ? `+${sub.points}` : sub.points} pts
-                </span>
-              </div>
-            </div>
-          ))}
+            );
+          })}
 
           {/* Toggle show all if more than 5 */}
           {validatedSubmissions.length > 5 && (

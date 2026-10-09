@@ -287,18 +287,37 @@ export const TaskList: React.FC<TaskListProps> = ({
                     </div>
                   )}
 
-                  {/* Pending validation badge if current player declared it */}
+                  {/* Pending validation badge if current player declared it or participated */}
                   {(() => {
                     const pendingSubs = state.submissions.filter(
-                      (s) => s.taskId === task.id && s.status === 'en_attente' && (!activeMember || s.submittedBy === activeMember.id)
+                      (s) =>
+                        s.taskId === task.id &&
+                        s.status === 'en_attente' &&
+                        (!activeMember ||
+                          s.submittedBy === activeMember.id ||
+                          (s.participantIds && s.participantIds.includes(activeMember.id)))
                     );
                     if (pendingSubs.length === 0) return null;
+                    const sub = pendingSubs[0];
+                    const isCoop = sub.isCoop || (sub.participantIds && sub.participantIds.length > 1);
                     return (
-                      <div className="mb-3 p-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center gap-2 font-medium">
-                        <span className="text-base">⏳</span>
-                        <span>
-                          Déclarée <strong>{pendingSubs[0].completedDateLabel}</strong> — En attente de validation par le tuteur
-                        </span>
+                      <div className="mb-3 p-2.5 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-2 font-medium shadow-2xs">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-base flex-shrink-0">⏳</span>
+                          <span className="truncate">
+                            Déclarée <strong>{sub.completedDateLabel}</strong>
+                            {isCoop && sub.participantNames && sub.participantNames.length > 0 && (
+                              <span> ({sub.participantNames.join(' & ')})</span>
+                            )}
+                            {' '}— En attente de validation
+                          </span>
+                        </div>
+                        {isCoop && (
+                          <span className="flex-shrink-0 inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xs">
+                            <Users className="w-2.5 h-2.5" />
+                            Coop
+                          </span>
+                        )}
                       </div>
                     );
                   })()}

@@ -116,11 +116,19 @@ export const ALL_BADGES: BadgeItem[] = [
     tier: 'bronze',
     category: 'Récompense',
   },
+  {
+    id: 'champion_cooperation',
+    title: 'Champion de la Coopération',
+    description: 'Réaliser au moins 1 mission en équipe (mission Coop à plusieurs)',
+    icon: '🤝',
+    tier: 'or',
+    category: 'Coopération',
+  },
 ];
 
 export function getMemberBadgeProgress(member: FamilyMember, state: FamilyState): MemberBadgeProgress[] {
   const memberSubmissions = state.submissions.filter(
-    (s) => s.submittedBy === member.id && s.status === 'validee'
+    (s) => s.status === 'validee' && (s.participantIds && s.participantIds.length > 0 ? s.participantIds.includes(member.id) : s.submittedBy === member.id)
   );
 
   const totalValidated = memberSubmissions.length;
@@ -139,6 +147,10 @@ export function getMemberBadgeProgress(member: FamilyMember, state: FamilyState)
 
   const schoolChores = memberSubmissions.filter(
     (s) => s.taskCategory === 'ecole'
+  ).length;
+
+  const coopChores = memberSubmissions.filter(
+    (s) => s.isCoop || (s.participantIds && s.participantIds.length > 1)
   ).length;
 
   const distinctCategories = new Set(memberSubmissions.map((s) => s.taskCategory)).size;
@@ -200,6 +212,10 @@ export function getMemberBadgeProgress(member: FamilyMember, state: FamilyState)
         break;
       case 'troc_gagnant':
         progress = memberClaims;
+        max = 1;
+        break;
+      case 'champion_cooperation':
+        progress = coopChores;
         max = 1;
         break;
     }

@@ -14,6 +14,7 @@ import {
   AlertCircle,
   Award,
   Trash2,
+  Users,
 } from 'lucide-react';
 import type { ChoreSubmission, FamilyMember, FamilyState } from '../types.ts';
 import { api } from '../services/api.ts';
@@ -250,29 +251,55 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
               const performer = state.members.find((m) => m.id === sub.submittedBy);
               const isLoading = actionLoadingId === sub.id;
 
+              const isCoop = !!sub.isCoop || (Array.isArray(sub.participantIds) && sub.participantIds.length > 1);
+              const participantMembers = (sub.participantIds && sub.participantIds.length > 0)
+                ? (sub.participantIds.map((id) => state.members.find((m) => m.id === id)).filter(Boolean) as FamilyMember[])
+                : (performer ? [performer] : []);
+
+              const pointsPerParticipant = sub.pointsPerParticipant || (
+                participantMembers.length > 0
+                  ? Math.ceil(sub.points / participantMembers.length)
+                  : sub.points
+              );
+
               return (
                 <div
                   key={sub.id}
-                  className="p-5 rounded-3xl bg-white border-2 border-indigo-100 shadow-sm hover:shadow-md transition space-y-4"
+                  className={`p-5 rounded-3xl bg-white border-2 shadow-sm hover:shadow-md transition space-y-4 ${
+                    isCoop ? 'border-purple-200 ring-2 ring-purple-100' : 'border-indigo-100'
+                  }`}
                 >
                   {/* Top Bar: Child Info & Points to earn */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-xs"
-                        style={{
-                          backgroundColor: performer ? `${performer.color}25` : '#e0e7ff',
-                          border: `2px solid ${performer?.color || '#4f46e5'}`,
-                        }}
-                      >
-                        {performer?.avatar || '👤'}
-                      </div>
+                      {isCoop ? (
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center text-2xl text-white shadow-md shadow-purple-500/20 flex-shrink-0">
+                          🤝
+                        </div>
+                      ) : (
+                        <div
+                          className="w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-xs flex-shrink-0"
+                          style={{
+                            backgroundColor: performer ? `${performer.color}25` : '#e0e7ff',
+                            border: `2px solid ${performer?.color || '#4f46e5'}`,
+                          }}
+                        >
+                          {performer?.avatar || '👤'}
+                        </div>
+                      )}
                       <div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <span className="font-extrabold text-slate-900 text-base">{sub.submittedByName}</span>
-                          <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
-                            {performer?.role === 'tuteur' ? 'Tuteur' : 'Joueur'}
-                          </span>
+                          {isCoop ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xs">
+                              <Users className="w-3 h-3" />
+                              Coop ({participantMembers.length} joueurs)
+                            </span>
+                          ) : (
+                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                              {performer?.role === 'tuteur' ? 'Tuteur' : 'Joueur'}
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
                           <Calendar className="w-3.5 h-3.5 text-indigo-500" />
@@ -281,11 +308,16 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
                       </div>
                     </div>
 
-                    <div className="text-right">
+                    <div className="text-right flex-shrink-0">
                       <span className="inline-flex items-center gap-1 px-3 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 font-black text-sm sm:text-base shadow-xs">
                         <Sparkles className="w-4 h-4 text-amber-500" />
                         +{sub.points} pts
                       </span>
+                      {isCoop && (
+                        <div className="text-[11px] font-extrabold text-indigo-700 mt-0.5">
+                          +{pointsPerParticipant} pts / joueur
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -297,6 +329,35 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
                       <div className="text-sm font-bold text-slate-800 truncate">{sub.taskTitle}</div>
                     </div>
                   </div>
+
+                  {/* Coop Participants Detail Box */}
+                  {isCoop && participantMembers.length > 0 && (
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-r from-purple-50/80 via-indigo-50/70 to-pink-50/70 border border-purple-200 text-indigo-950 space-y-2">
+                      <div className="flex items-center justify-between text-xs">
+                        <span className="font-black text-indigo-900 flex items-center gap-1.5">
+                          <Users className="w-4 h-4 text-indigo-600" />
+                          <span>Héros ayant participé à cette mission :</span>
+                        </span>
+                        <span className="text-[11px] font-bold text-purple-700">
+                          Partage équitable : +{pointsPerParticipant} pts chacun
+                        </span>
+                      </div>
+                      <div className="flex flex-wrap gap-2">
+                        {participantMembers.map((p) => (
+                          <div
+                            key={p.id}
+                            className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white border border-purple-200 shadow-2xs text-xs font-bold text-slate-800"
+                          >
+                            <span className="text-base">{p.avatar}</span>
+                            <span>{p.name}</span>
+                            <span className="text-[10px] font-black px-1.5 py-0.5 rounded-md bg-amber-50 text-amber-700 border border-amber-200">
+                              +{pointsPerParticipant} pts
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
 
                   {/* Kid's Note if any */}
                   {sub.note && (
@@ -314,16 +375,24 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
                     <button
                       onClick={() => handleValidate(sub)}
                       disabled={isLoading || !isCurrentTuteur}
-                      className="w-full sm:flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 active:scale-95 text-white font-extrabold text-sm shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50"
+                      className={`w-full sm:flex-1 py-3 px-4 rounded-2xl active:scale-95 text-white font-extrabold text-sm shadow-md transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer ${
+                        isCoop
+                          ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-indigo-700 hover:from-purple-700 hover:to-indigo-800 shadow-purple-500/20'
+                          : 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 shadow-emerald-500/20'
+                      }`}
                     >
                       <CheckCircle2 className="w-5 h-5" />
-                      <span>Valider & Créditer (+{sub.points} pts)</span>
+                      <span>
+                        {isCoop
+                          ? `Valider la Mission Coop (+${pointsPerParticipant} pts chacun) 🤝`
+                          : `Valider & Créditer (+${sub.points} pts)`}
+                      </span>
                     </button>
 
                     <button
                       onClick={() => handleOpenReject(sub.id)}
                       disabled={isLoading || !isCurrentTuteur}
-                      className="w-full sm:w-auto py-3 px-4 rounded-2xl border border-slate-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      className="w-full sm:w-auto py-3 px-4 rounded-2xl border border-slate-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-200 text-slate-700 font-bold text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50 cursor-pointer"
                     >
                       <XCircle className="w-4 h-4" />
                       <span>À refaire / Refuser</span>
@@ -356,26 +425,39 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
           ) : (
             historySubmissions.map((sub) => {
               const isValidated = sub.status === 'validee';
+              const isCoop = !!sub.isCoop || (Array.isArray(sub.participantIds) && sub.participantIds.length > 1);
               return (
                 <div
                   key={sub.id}
-                  className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between gap-3"
+                  className={`p-4 rounded-2xl bg-white border shadow-xs flex items-center justify-between gap-3 ${
+                    isCoop ? 'border-purple-200' : 'border-slate-200'
+                  }`}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
                     <div
                       className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
                         isValidated ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
                       }`}
                     >
-                      {isValidated ? '✅' : '❌'}
+                      {isValidated ? (isCoop ? '🤝' : '✅') : '❌'}
                     </div>
-                    <div>
-                      <div className="font-bold text-sm text-slate-900 flex items-center gap-2">
-                        <span>{sub.taskTitle}</span>
+                    <div className="min-w-0">
+                      <div className="font-bold text-sm text-slate-900 flex items-center gap-2 flex-wrap">
+                        <span className="truncate">{sub.taskTitle}</span>
                         <span className="text-xs text-slate-400">• {sub.taskIcon}</span>
+                        {isCoop && (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xs">
+                            <Users className="w-2.5 h-2.5" />
+                            Coop
+                          </span>
+                        )}
                       </div>
-                      <div className="text-xs text-slate-500 mt-0.5">
-                        Par <strong>{sub.submittedByName}</strong> • Réalisé : {sub.completedDateLabel}
+                      <div className="text-xs text-slate-500 mt-0.5 truncate">
+                        {isCoop ? (
+                          <span>En Coop par <strong>{sub.participantNames?.join(' & ') || sub.submittedByName}</strong></span>
+                        ) : (
+                          <span>Par <strong>{sub.submittedByName}</strong></span>
+                        )} • Réalisé : {sub.completedDateLabel}
                       </div>
                       {sub.rejectionReason && (
                         <div className="text-xs text-rose-600 italic mt-0.5">Motif : {sub.rejectionReason}</div>
@@ -391,7 +473,11 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
                           : 'bg-rose-100 text-rose-800 line-through'
                       }`}
                     >
-                      {isValidated ? `+${sub.points} pts` : `${sub.points} pts`}
+                      {isValidated
+                        ? isCoop
+                          ? `+${sub.pointsPerParticipant || Math.ceil(sub.points / (sub.participantIds?.length || 2))} pts / joueur`
+                          : `+${sub.points} pts`
+                        : `${sub.points} pts`}
                     </span>
                     <div className="text-[10px] text-slate-400 mt-1">
                       {isValidated ? `Validé par ${sub.validatedByName || 'Tuteur'}` : 'Refusé'}

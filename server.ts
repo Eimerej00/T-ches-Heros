@@ -216,6 +216,15 @@ const INITIAL_STATE: FamilyState = {
       category: 'sortie',
       timesClaimed: 0,
     },
+    {
+      id: 'rew-coop',
+      title: 'Champion de la Coopération (Activité duo)',
+      description: 'Activité spéciale ou jeu partagé en équipe avec son complice de mission !',
+      cost: 80,
+      icon: '🤝',
+      category: 'famille',
+      timesClaimed: 0,
+    },
   ],
   rewardClaims: [],
   lastUpdated: Date.now(),
@@ -310,12 +319,35 @@ async function startServer() {
 
     switch (type) {
       case 'SUBMIT_CHORE': {
-        const { taskId, memberId, completedDate, completedDateLabel, note, submissionId } = payload;
+        const { taskId, memberId, participantIds, completedDate, completedDateLabel, note, submissionId } = payload;
         const task = state.tasks.find((t) => t.id === taskId);
-        const member = state.members.find((m) => m.id === memberId);
-        if (!task || !member) {
-          return res.status(400).json({ error: 'Tâche ou membre introuvable' });
+        if (!task) {
+          return res.status(400).json({ error: 'Tâche introuvable' });
         }
+
+        const pIds: string[] = Array.isArray(participantIds) && participantIds.length > 0
+          ? participantIds
+          : (memberId ? [memberId] : []);
+
+        if (pIds.length === 0) {
+          return res.status(400).json({ error: 'Veuillez sélectionner au moins un participant' });
+        }
+
+        const participantMembers = pIds
+          .map((id) => state.members.find((m) => m.id === id))
+          .filter(Boolean) as FamilyMember[];
+
+        if (participantMembers.length === 0) {
+          return res.status(400).json({ error: 'Participant(s) introuvable(s)' });
+        }
+
+        const isCoop = participantMembers.length > 1;
+        const pointsPerParticipant = isCoop
+          ? Math.ceil(task.points / participantMembers.length)
+          : task.points;
+
+        const participantNames = participantMembers.map((m) => m.name);
+        const primaryMember = participantMembers[0];
 
         const submission: ChoreSubmission = {
           id: submissionId || `sub-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
@@ -324,8 +356,12 @@ async function startServer() {
           taskCategory: task.category,
           taskIcon: task.icon,
           points: task.points,
-          submittedBy: member.id,
-          submittedByName: member.name,
+          isCoop,
+          participantIds: participantMembers.map((m) => m.id),
+          participantNames,
+          pointsPerParticipant,
+          submittedBy: primaryMember.id,
+          submittedByName: isCoop ? participantNames.join(' & ') : primaryMember.name,
           completedDate: completedDate || new Date().toISOString().split('T')[0],
           completedDateLabel: completedDateLabel || 'Aujourd’hui',
           submittedAt: new Date().toISOString(),
@@ -358,18 +394,26 @@ async function startServer() {
         sub.validatedByName = guardian.name;
         sub.validatedAt = new Date().toISOString();
 
-        // Credit points to the member who performed the task
-        const performer = state.members.find((m) => m.id === sub.submittedBy);
-        if (performer) {
-          performer.points += sub.points;
-          performer.totalEarnedPoints += sub.points;
-          const { level, title } = calculateLevel(performer.totalEarnedPoints);
-          performer.level = level;
-          performer.title = title;
-        }
+        // Credit points to all participating members (supporting Coop fair split)
+        const participantIds: string[] = (sub.participantIds && sub.participantIds.length > 0)
+          ? sub.participantIds
+          : [sub.submittedBy];
+
+        const pointsEach = sub.pointsPerParticipant || Math.ceil(sub.points / participantIds.length);
+
+        participantIds.forEach((pId) => {
+          const performer = state.members.find((m) => m.id === pId);
+          if (performer) {
+            performer.points += pointsEach;
+            performer.totalEarnedPoints += pointsEach;
+            const { level, title } = calculateLevel(performer.totalEarnedPoints);
+            performer.level = level;
+            performer.title = title;
+          }
+        });
 
         persistState();
-        return res.json({ success: true, submission: sub, performer, state });
+        return res.json({ success: true, submission: sub, state });
       }
 
       case 'REJECT_SUBMISSION': {

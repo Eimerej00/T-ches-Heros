@@ -255,6 +255,15 @@
       "icon": "🛹",
       "category": "sortie",
       "timesClaimed": 0
+    },
+    {
+      "id": "rew-coop",
+      "title": "Champion de la Coopération (Activité duo)",
+      "description": "Activité spéciale ou jeu partagé en équipe avec son complice de mission !",
+      "cost": 80,
+      "icon": "🤝",
+      "category": "famille",
+      "timesClaimed": 0
     }
   ],
   "rewardClaims": [],

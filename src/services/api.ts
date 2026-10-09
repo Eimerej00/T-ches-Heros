@@ -88,8 +88,17 @@ class ApiService {
     // Pick whichever state has newer or equal lastUpdated for metadata/members/tasks
     const base = (incoming.lastUpdated || 0) >= (current.lastUpdated || 0) ? incoming : current;
 
+    // Ensure default system rewards (such as rew-coop) are present in the list
+    const mergedRewards = [...(base.rewards || [])];
+    INITIAL_STATE.rewards.forEach((r) => {
+      if (!mergedRewards.some((existing) => existing.id === r.id)) {
+        mergedRewards.push(r);
+      }
+    });
+
     const reconciled: FamilyState = {
       ...base,
+      rewards: mergedRewards,
       submissions: mergedSubmissions,
       lastUpdated: Math.max(incoming.lastUpdated || 0, current.lastUpdated || 0, Date.now()),
     };
