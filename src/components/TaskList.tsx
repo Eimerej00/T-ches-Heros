@@ -15,6 +15,7 @@ import {
 import type { ChoreTask, FamilyMember, FamilyState, TaskCategory } from '../types.ts';
 import { api } from '../services/api.ts';
 import { sounds } from '../services/audio.ts';
+import { formatRelativeCompletedDate } from '../utils/dateUtils.ts';
 
 interface TaskListProps {
   state: FamilyState;
@@ -305,7 +306,7 @@ export const TaskList: React.FC<TaskListProps> = ({
                         <div className="flex items-center gap-2 min-w-0">
                           <span className="text-base flex-shrink-0">⏳</span>
                           <span className="truncate">
-                            Déclarée <strong>{sub.completedDateLabel}</strong>
+                            Déclarée <strong>{formatRelativeCompletedDate(sub.completedDate, sub.completedDateLabel, sub.submittedAt)}</strong>
                             {isCoop && sub.participantNames && sub.participantNames.length > 0 && (
                               <span> ({sub.participantNames.join(' & ')})</span>
                             )}

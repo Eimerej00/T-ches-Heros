@@ -10,8 +10,10 @@ import {
   ShieldCheck,
   TrendingUp,
   Users,
+  AlertCircle,
 } from 'lucide-react';
 import type { FamilyMember, FamilyState, ChoreSubmission } from '../types.ts';
+import { formatRelativeCompletedDate } from '../utils/dateUtils.ts';
 
 interface MemberPointsHistoryProps {
   state: FamilyState;
@@ -165,7 +167,7 @@ export const MemberPointsHistory: React.FC<MemberPointsHistoryProps> = ({ state,
 
                       <span className="flex items-center gap-1 font-medium text-slate-700">
                         <Calendar className="w-3 h-3 text-indigo-500" />
-                        <span>Fait : {sub.completedDateLabel}</span>
+                        <span>Fait : {formatRelativeCompletedDate(sub.completedDate, sub.completedDateLabel, sub.submittedAt)}</span>
                       </span>
 
                       {sub.validatedByName && (
@@ -199,7 +201,11 @@ export const MemberPointsHistory: React.FC<MemberPointsHistoryProps> = ({ state,
                       memberPoints >= 0 ? 'bg-emerald-500' : 'bg-rose-500'
                     }`}
                   >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-white/80" />
+                    {memberPoints >= 0 ? (
+                      <CheckCircle2 className="w-3.5 h-3.5 text-white/80" />
+                    ) : (
+                      <AlertCircle className="w-3.5 h-3.5 text-white/80" />
+                    )}
                     {memberPoints > 0 ? `+${memberPoints}` : memberPoints} pts
                   </span>
                 </div>

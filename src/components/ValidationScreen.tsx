@@ -20,6 +20,7 @@ import type { ChoreSubmission, FamilyMember, FamilyState } from '../types.ts';
 import { api } from '../services/api.ts';
 import { sounds } from '../services/audio.ts';
 import { BonusMalusModal } from './BonusMalusModal.tsx';
+import { formatRelativeCompletedDate } from '../utils/dateUtils.ts';
 
 interface ValidationScreenProps {
   state: FamilyState;
@@ -303,7 +304,9 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
                         </div>
                         <div className="text-xs text-slate-500 flex items-center gap-1.5 mt-0.5">
                           <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-                          <span className="font-medium text-indigo-700">Fait le : {sub.completedDateLabel}</span>
+                          <span className="font-medium text-indigo-700">
+                            Fait le : {formatRelativeCompletedDate(sub.completedDate, sub.completedDateLabel, sub.submittedAt)}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -425,39 +428,102 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
           ) : (
             historySubmissions.map((sub) => {
               const isValidated = sub.status === 'validee';
+              const isRejected = sub.status === 'rejetee';
               const isCoop = !!sub.isCoop || (Array.isArray(sub.participantIds) && sub.participantIds.length > 1);
+
+              // Bonus / Malus detection
+              const isMalus = sub.points < 0 || sub.taskCategory === 'malus' || sub.taskId === 'malus';
+              const isBonus = sub.points > 0 && (sub.taskCategory === 'bonus' || sub.taskId === 'bonus');
+
+              // Card styling
+              const cardBorderClass = isMalus
+                ? 'border-rose-200 bg-rose-50/20'
+                : isBonus
+                ? 'border-emerald-200 bg-emerald-50/20'
+                : isCoop
+                ? 'border-purple-200 bg-white'
+                : 'border-slate-200 bg-white';
+
+              // Icon container & icon
+              let iconBoxClass = 'bg-emerald-50 text-emerald-700 border border-emerald-100';
+              let iconContent: React.ReactNode = isCoop ? '🤝' : '✅';
+
+              if (isRejected) {
+                iconBoxClass = 'bg-rose-50 text-rose-700 border border-rose-100';
+                iconContent = '❌';
+              } else if (isMalus) {
+                iconBoxClass = 'bg-rose-100 text-rose-700 border border-rose-200';
+                iconContent = sub.taskIcon || '⚠️';
+              } else if (isBonus) {
+                iconBoxClass = 'bg-emerald-100 text-emerald-700 border border-emerald-200';
+                iconContent = sub.taskIcon || '⭐';
+              }
+
+              // Points badge color: Green for bonus/positive, Red for malus/negative
+              const badgeClass = isMalus
+                ? 'bg-rose-100 text-rose-800 border border-rose-200'
+                : isRejected
+                ? 'bg-rose-100 text-rose-800 line-through border border-rose-200'
+                : 'bg-emerald-100 text-emerald-800 border border-emerald-200';
+
+              const pointsText = isMalus
+                ? `${sub.points} pts`
+                : isValidated
+                ? isCoop
+                  ? `+${sub.pointsPerParticipant || Math.ceil(sub.points / (sub.participantIds?.length || 2))} pts / joueur`
+                  : `+${sub.points} pts`
+                : `${sub.points} pts`;
+
+              const statusSubtext = isRejected
+                ? 'Refusé'
+                : isMalus
+                ? `Appliqué par ${sub.validatedByName || 'Tuteur'}`
+                : isBonus
+                ? `Accordé par ${sub.validatedByName || 'Tuteur'}`
+                : `Validé par ${sub.validatedByName || 'Tuteur'}`;
+
               return (
                 <div
                   key={sub.id}
-                  className={`p-4 rounded-2xl bg-white border shadow-xs flex items-center justify-between gap-3 ${
-                    isCoop ? 'border-purple-200' : 'border-slate-200'
-                  }`}
+                  className={`p-4 rounded-2xl border shadow-xs flex items-center justify-between gap-3 ${cardBorderClass}`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
                     <div
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${
-                        isValidated ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'
-                      }`}
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0 ${iconBoxClass}`}
                     >
-                      {isValidated ? (isCoop ? '🤝' : '✅') : '❌'}
+                      {iconContent}
                     </div>
                     <div className="min-w-0">
                       <div className="font-bold text-sm text-slate-900 flex items-center gap-2 flex-wrap">
                         <span className="truncate">{sub.taskTitle}</span>
-                        <span className="text-xs text-slate-400">• {sub.taskIcon}</span>
-                        {isCoop && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xs">
-                            <Users className="w-2.5 h-2.5" />
-                            Coop
+                        {isMalus ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                            Malus
                           </span>
+                        ) : isBonus ? (
+                          <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Bonus
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-xs text-slate-400">• {sub.taskIcon}</span>
+                            {isCoop && (
+                              <span className="inline-flex items-center gap-1 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-2xs">
+                                <Users className="w-2.5 h-2.5" />
+                                Coop
+                              </span>
+                            )}
+                          </>
                         )}
                       </div>
                       <div className="text-xs text-slate-500 mt-0.5 truncate">
                         {isCoop ? (
                           <span>En Coop par <strong>{sub.participantNames?.join(' & ') || sub.submittedByName}</strong></span>
+                        ) : isMalus || isBonus ? (
+                          <span>Pour <strong>{sub.submittedByName}</strong></span>
                         ) : (
                           <span>Par <strong>{sub.submittedByName}</strong></span>
-                        )} • Réalisé : {sub.completedDateLabel}
+                        )} • Réalisé : {formatRelativeCompletedDate(sub.completedDate, sub.completedDateLabel, sub.submittedAt)}
                       </div>
                       {sub.rejectionReason && (
                         <div className="text-xs text-rose-600 italic mt-0.5">Motif : {sub.rejectionReason}</div>
@@ -466,21 +532,11 @@ export const ValidationScreen: React.FC<ValidationScreenProps> = ({
                   </div>
 
                   <div className="text-right flex-shrink-0">
-                    <span
-                      className={`text-xs font-black px-2.5 py-1 rounded-lg ${
-                        isValidated
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-rose-100 text-rose-800 line-through'
-                      }`}
-                    >
-                      {isValidated
-                        ? isCoop
-                          ? `+${sub.pointsPerParticipant || Math.ceil(sub.points / (sub.participantIds?.length || 2))} pts / joueur`
-                          : `+${sub.points} pts`
-                        : `${sub.points} pts`}
+                    <span className={`text-xs font-black px-2.5 py-1 rounded-lg ${badgeClass}`}>
+                      {pointsText}
                     </span>
                     <div className="text-[10px] text-slate-400 mt-1">
-                      {isValidated ? `Validé par ${sub.validatedByName || 'Tuteur'}` : 'Refusé'}
+                      {statusSubtext}
                     </div>
                   </div>
                 </div>
