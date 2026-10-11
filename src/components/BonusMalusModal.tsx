@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import confetti from 'canvas-confetti';
 import {
   Sparkles,
@@ -64,9 +64,13 @@ export const BonusMalusModal: React.FC<BonusMalusModalProps> = ({
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  const initializedRef = useRef<boolean>(false);
+  const prevOpenRef = useRef<boolean>(false);
+
   // Initialize once whenever the modal opens
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !initializedRef.current) {
+      // Modal just opened or first load
       const defaultId = familyMembers[0]?.id || '';
       setSelectedMemberId(defaultId);
       setIsBonus(true);
@@ -75,6 +79,11 @@ export const BonusMalusModal: React.FC<BonusMalusModalProps> = ({
       setReason('');
       setErrorMsg(null);
       setIsSubmitting(false);
+      initializedRef.current = true;
+    }
+    
+    if (!isOpen) {
+        initializedRef.current = false;
     }
   }, [isOpen, familyMembers]);
 
