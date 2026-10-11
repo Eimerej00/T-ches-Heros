@@ -150,8 +150,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ state, activeMember })
                 </div>
 
                 <div className="text-right">
-                  <div className="font-black text-base text-slate-900">{member.points} pts</div>
-                  <div className="text-[11px] text-slate-400">Total gagné : {member.totalEarnedPoints}</div>
+                  <div className="font-black text-base text-indigo-600">{member.totalEarnedPoints} pts</div>
                 </div>
               </div>
 
