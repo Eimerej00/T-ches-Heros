@@ -53,10 +53,8 @@ export const BonusMalusModal: React.FC<BonusMalusModalProps> = ({
   state,
   activeGuardian,
 }) => {
-  // Players list (prefer role === 'joueur', fallback to all members)
-  const players = state.members.filter((m) => m.role === 'joueur').length > 0
-    ? state.members.filter((m) => m.role === 'joueur')
-    : state.members;
+  // Players list (all family members)
+  const familyMembers = state.members;
 
   const [selectedMemberId, setSelectedMemberId] = useState<string>('');
   const [isBonus, setIsBonus] = useState<boolean>(true);
@@ -69,7 +67,7 @@ export const BonusMalusModal: React.FC<BonusMalusModalProps> = ({
   // Initialize once whenever the modal opens
   useEffect(() => {
     if (isOpen) {
-      const defaultId = players[0]?.id || state.members[0]?.id || '';
+      const defaultId = familyMembers[0]?.id || '';
       setSelectedMemberId(defaultId);
       setIsBonus(true);
       setPointsAmount(10);
@@ -78,11 +76,11 @@ export const BonusMalusModal: React.FC<BonusMalusModalProps> = ({
       setErrorMsg(null);
       setIsSubmitting(false);
     }
-  }, [isOpen]);
+  }, [isOpen, familyMembers]);
 
   if (!isOpen) return null;
 
-  const selectedMember = state.members.find((m) => m.id === selectedMemberId) || players[0];
+  const selectedMember = state.members.find((m) => m.id === selectedMemberId) || familyMembers[0];
   const currentPoints = selectedMember ? (selectedMember.points || 0) : 0;
   const projectedPoints = isBonus
     ? currentPoints + pointsAmount
@@ -228,7 +226,7 @@ export const BonusMalusModal: React.FC<BonusMalusModalProps> = ({
               1. Sélectionner le joueur
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {players.map((m) => {
+              {familyMembers.map((m) => {
                 const isSelected = selectedMember?.id === m.id;
                 return (
                   <button
