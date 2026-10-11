@@ -5,6 +5,7 @@ import { PointsEvolutionChart } from './PointsEvolutionChart.tsx';
 import { BadgesGallery } from './BadgesGallery.tsx';
 import { MemberPointsHistory } from './MemberPointsHistory.tsx';
 import { getMemberBadgeProgress } from '../services/badges.ts';
+import { getLevelProgress } from '../services/defaultState.ts';
 
 interface LeaderboardProps {
   state: FamilyState;
@@ -105,8 +106,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ state, activeMember })
       <div className="space-y-3">
         {sortedMembers.map((member, index) => {
           const isCurrent = activeMember?.id === member.id;
-          const nextLevelThreshold = member.level * 150;
-          const progressPercent = Math.min(100, Math.round(((member.totalEarnedPoints % 150) / 150) * 100));
+          const { level, title, progressPercent } = getLevelProgress(member.totalEarnedPoints);
 
           return (
             <div

@@ -60,24 +60,22 @@ export const PointsEvolutionChart: React.FC<PointsEvolutionChartProps> = ({ stat
       }
     }
 
-    // Compute cumulative data points
-    // For each member, find their chores earned up to each date
+    // Compute cumulative data points (integrating chores, bonuses, and malus)
     const data = datePoints.map(({ dateStr, label }) => {
       const point: Record<string, string | number> = { date: label };
 
       state.members.forEach((member) => {
-        // Sum of all validated chores for this member up to this date
-        const earnedUpToDate = validatedSubmissions
+        // Sum of all validated submissions (chores, bonuses, malus) for this member up to this date
+        const netUpToDate = validatedSubmissions
           .filter((s) => s.submittedBy === member.id && s.completedDate <= dateStr)
           .reduce((sum, s) => sum + (s.points || 0), 0);
 
-        // If totalEarnedPoints has a baseline not in submissions, account for it
         const totalSubmissionsPoints = validatedSubmissions
           .filter((s) => s.submittedBy === member.id)
           .reduce((sum, s) => sum + (s.points || 0), 0);
 
-        const baseline = Math.max(0, (member.totalEarnedPoints || 0) - totalSubmissionsPoints);
-        point[member.id] = baseline + earnedUpToDate;
+        const baseline = (member.totalEarnedPoints || 0) - totalSubmissionsPoints;
+        point[member.id] = Math.max(0, baseline + netUpToDate);
       });
 
       return point;

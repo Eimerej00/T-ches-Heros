@@ -94,22 +94,13 @@ export const TaskList: React.FC<TaskListProps> = ({
         </div>
 
         <div className="flex items-center gap-2">
-          {isGuardian ? (
+          {isGuardian && (
             <button
               onClick={() => onOpenCreateTask()}
-              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-95 text-white rounded-2xl text-xs sm:text-sm font-extrabold shadow-sm transition"
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 active:scale-95 text-white rounded-2xl text-xs sm:text-sm font-extrabold shadow-sm transition cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Créer une mission</span>
-            </button>
-          ) : (
-            <button
-              onClick={() => onOpenCreateTask()}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition"
-              title="Créer une mission (mode tuteur)"
-            >
-              <Plus className="w-3.5 h-3.5 text-slate-500" />
-              <span>Ajouter une tâche</span>
             </button>
           )}
         </div>

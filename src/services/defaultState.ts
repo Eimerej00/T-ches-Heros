@@ -11,6 +11,43 @@ export function calculateLevel(totalEarned: number): { level: number; title: str
   return { level: 1, title: 'Novice en Mission 🌱' };
 }
 
+export function getLevelProgress(totalEarned: number): {
+  level: number;
+  title: string;
+  progressPercent: number;
+} {
+  const t = Math.max(0, totalEarned);
+  if (t >= 1000) return { level: 8, title: 'Légende Familiale 👑', progressPercent: 100 };
+  if (t >= 700) {
+    const min = 700, next = 1000;
+    return { level: 7, title: 'Grand Maître du Logis 🏆', progressPercent: Math.round(((t - min) / (next - min)) * 100) };
+  }
+  if (t >= 500) {
+    const min = 500, next = 700;
+    return { level: 6, title: 'Champion de la Maison 🥇', progressPercent: Math.round(((t - min) / (next - min)) * 100) };
+  }
+  if (t >= 350) {
+    const min = 350, next = 500;
+    return { level: 5, title: 'Héros Domestique ⭐', progressPercent: Math.round(((t - min) / (next - min)) * 100) };
+  }
+  if (t >= 250) {
+    const min = 250, next = 350;
+    return { level: 4, title: 'Chevalier du Foyer 🛡️', progressPercent: Math.round(((t - min) / (next - min)) * 100) };
+  }
+  if (t >= 180) {
+    const min = 180, next = 250;
+    return { level: 3, title: 'Écuyer Motivé ⚔️', progressPercent: Math.round(((t - min) / (next - min)) * 100) };
+  }
+  if (t >= 70) {
+    const min = 70, next = 180;
+    return { level: 2, title: 'Apprenti Débrouillard 🪄', progressPercent: Math.round(((t - min) / (next - min)) * 100) };
+  }
+  {
+    const min = 0, next = 70;
+    return { level: 1, title: 'Novice en Mission 🌱', progressPercent: Math.round(((t - min) / (next - min)) * 100) };
+  }
+}
+
 export const INITIAL_STATE: FamilyState = {
   settings: {
     familyName: 'La Tribu des Héros',
@@ -598,6 +635,10 @@ export function applyLocalAction(
         member.title = title;
       } else {
         member.points = Math.max(0, member.points - amount);
+        member.totalEarnedPoints = Math.max(0, member.totalEarnedPoints - amount);
+        const { level, title } = calculateLevel(member.totalEarnedPoints);
+        member.level = level;
+        member.title = title;
       }
 
       const historyEntry: ChoreSubmission = {
