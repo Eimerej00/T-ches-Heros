@@ -65,7 +65,7 @@ export const PointsEvolutionChart: React.FC<PointsEvolutionChartProps> = ({ stat
       const point: Record<string, string | number> = { date: label };
 
       state.members.forEach((member) => {
-        // Sum of all validated submissions (chores, bonuses, malus) for this member up to this date
+        // Sum of all validated submissions (chores, bonuses, malus) for this member up to this date, starting from 0
         const netUpToDate = validatedSubmissions
           .filter((s) => {
             const isParticipant = (s.participantIds && s.participantIds.includes(member.id)) || s.submittedBy === member.id;
@@ -77,16 +77,7 @@ export const PointsEvolutionChart: React.FC<PointsEvolutionChartProps> = ({ stat
             return sum + pts;
           }, 0);
 
-        const totalSubmissionsPoints = validatedSubmissions
-          .filter((s) => (s.participantIds && s.participantIds.includes(member.id)) || s.submittedBy === member.id)
-          .reduce((sum, s) => {
-            const count = s.participantIds && s.participantIds.length > 0 ? s.participantIds.length : 1;
-            const pts = s.pointsPerParticipant !== undefined ? s.pointsPerParticipant : (s.isCoop ? Math.ceil((s.points || 0) / count) : (s.points || 0));
-            return sum + pts;
-          }, 0);
-
-        const baseline = (member.totalEarnedPoints || 0) - totalSubmissionsPoints;
-        point[member.id] = Math.max(0, baseline + netUpToDate);
+        point[member.id] = Math.max(0, netUpToDate);
       });
 
       return point;

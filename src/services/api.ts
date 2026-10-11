@@ -1,5 +1,5 @@
 import type { FamilyState, FamilyMember, ChoreSubmission, ChoreTask, RewardClaim } from '../types.ts';
-import { INITIAL_STATE, applyLocalAction, calculateLevel } from './defaultState.ts';
+import { INITIAL_STATE, applyLocalAction, calculateLevel, getLevelProgress } from './defaultState.ts';
 import { db, doc, onSnapshot, setDoc, getDoc } from './firebase.ts';
 import { authService } from './auth.ts';
 
@@ -163,6 +163,7 @@ class ApiService {
     const mergedMembers = Array.from(membersMap.values()).map((m) => {
       let earned = 0;
       let spendable = 0;
+      console.group(`[ScoreCalculation] 👤 Member: ${m.name} (${m.id}) - Starting at 0 pts`);
 
       mergedSubmissions
         .filter((s) => s.status === 'validee')
@@ -173,28 +174,28 @@ class ApiService {
           if (!isParticipant) return;
 
           const count = s.participantIds && s.participantIds.length > 0 ? s.participantIds.length : 1;
-          const pts = s.pointsPerParticipant || (s.isCoop ? Math.ceil(s.points / count) : s.points);
+          const pts = s.pointsPerParticipant !== undefined ? s.pointsPerParticipant : (s.isCoop ? Math.ceil((s.points || 0) / count) : (s.points || 0));
 
-          if (pts > 0) {
-            earned += pts;
-            spendable += pts;
-          } else {
-            // Malus (points is negative)
-            spendable += pts;
-          }
+          earned += pts;
+          spendable += pts;
+          console.log(`  ➕ Transaction: "${s.taskTitle}" | Type: ${s.taskCategory || 'mission'} | Points: ${pts > 0 ? `+${pts}` : pts} | Running Earned: ${earned} | Running Spendable: ${spendable}`);
         });
 
       // Deduct spent reward claims
       mergedClaims.forEach((c) => {
         if (c.claimedBy === m.id && c.cost) {
           spendable -= c.cost;
+          console.log(`  ➖ Reward Claim: "${c.rewardTitle}" | Cost: -${c.cost} | Running Spendable: ${spendable}`);
         }
       });
 
-      // Ensure points do not go negative and honor any higher baseline score
-      const finalTotalEarned = Math.max(m.totalEarnedPoints || 0, earned);
-      const finalSpendable = Math.max(0, Math.max(m.points || 0, spendable));
-      const { level, title } = calculateLevel(finalTotalEarned);
+      // Scores start strictly from 0 based on history
+      const finalTotalEarned = Math.max(0, earned);
+      const finalSpendable = Math.max(0, spendable);
+      const { level, title } = getLevelProgress(finalTotalEarned);
+
+      console.log(`  🎯 Final Result for ${m.name}: Total Earned = ${finalTotalEarned} pts, Spendable Balance = ${finalSpendable} pts (Level ${level}: ${title})`);
+      console.groupEnd();
 
       return {
         ...m,
